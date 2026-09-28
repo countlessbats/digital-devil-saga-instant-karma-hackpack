@@ -13,6 +13,8 @@ VERSION = open(os.path.join(ROOT, 'VERSION')).read().strip()
 # The hook runs it N-1 extra times with the render task's "skip submit" flag
 # (bit 0x2000000 of 0x3ba904) set, re-reading the pad between passes so button
 # edges fire once, then runs the normal pass that submits the frame.
+# Each skipped pass restores the packet-buffer index (0x3bd2ea) so all passes
+# build into the buffer the render thread is not holding.
 TURBO_VARS = 0x000F0000   # +0 toggle mult, +1 debug override, +2 prev held, +4 last N, +8 extra passes
 TURBO_CODE = 0x000F0020
 HOOK_SITE = 0x001006AC    # jal 0x101540 inside main loop
@@ -82,6 +84,10 @@ extra:
     sw    $9, -0x56fc($8)
     jal   0x101540
     nop
+    lui   $8, 0x003C
+    lbu   $9, -0x2d16($8)         # 0x3bd2ea packet buffer index: undo this pass's flip
+    xori  $9, $9, 1
+    sb    $9, -0x2d16($8)
     jal   0x2e39c8                # refresh pad so edges don't repeat
     nop
     lui   $8, 0x003C
