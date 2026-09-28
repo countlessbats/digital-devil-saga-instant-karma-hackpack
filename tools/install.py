@@ -1,9 +1,9 @@
 r"""Install the built pnach + per-game EE overclock into a PCSX2 user folder.
 
-Usage: python tools/install.py [PCSX2_USER_DIR]   (default D:DocumentsPCSX2)
+Usage: python tools/install.py [PCSX2_USER_DIR]   (default <local path>)
 The per-game ini only gets EmuCore/Speedhacks EECycleRate = 3 set; other keys are kept.
-Uninstall: delete patchesD7273511.pnach and remove EECycleRate from
-gamesettingsSLUS-20974_D7273511.ini.
+Uninstall: delete patches\D7273511.pnach and remove EECycleRate from
+gamesettings\SLUS-20974_D7273511.ini.
 """
 import os, sys, shutil, configparser
 
