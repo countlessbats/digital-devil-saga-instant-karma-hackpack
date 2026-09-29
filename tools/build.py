@@ -237,6 +237,8 @@ def build(include_test=False):
     lines.append('patch=1,EE,0026B11C,word,%08X' % (0x3C080000 | qhi))            # lui $t0, hi(qs_title)
     lines.append('patch=1,EE,0026B12C,word,%08X' % (0x25080000 | (qa & 0xffff)))  # addiu $t0, $t0, lo(qs_title)
     hook(lines, 0x001006A4, syms['qs_pad'], 'main loop pad processing (autoload presses)')
+    hook(lines, 0x00102528, syms['black_draw'], 'screen fade draw (held black while loading)')
+    hook(lines, 0x00125980, syms['field_hook'], 'field player-control step (tells QuickStart the game is up)')
     # ---- SceneSkip: START skips the whole cutscene (every segment made skippable; the rest fast-forwarded) ----
     lines += ['', '[%s]' % PATCH_SKIP, 'author=Good Karma v%s' % VERSION,
               'description=START during a cutscene skips the whole scene, including scenes the game normally '
@@ -246,6 +248,7 @@ def build(include_test=False):
     lines.append('patch=1,EE,0022F2F4,word,24020000')            # 'cannot be skipped' check -> skippable
     hook(lines, 0x001006A4, syms['qs_pad'], 'main loop pad processing (shared with QuickStart)')
     hook(lines, 0x00125980, syms['field_hook'], 'field player-control step (tells SceneSkip the player has control)')
+    hook(lines, 0x00102528, syms['black_draw'], 'screen fade draw (held black while skipping)')
     # ---- OpenChests: inspecting a chest opens it at once (question and Yes answered automatically) ----
     lines += ['', '[%s]' % PATCH_CHEST, 'author=Good Karma v%s' % VERSION,
               'description=Inspecting a chest opens it straight away: no "Touch it?" question or Yes/No. '

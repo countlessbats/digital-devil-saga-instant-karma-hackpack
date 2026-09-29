@@ -50,6 +50,15 @@ static int al_phase, al_target, al_timer, al_wait;   /* al_target is set by auto
 static u8 dirtbl[16 * 64] __attribute__((aligned(64)));
 static const char dir_pattern[] = "/BASLUS-20974-new-*";
 
+extern int hold_black;
+extern u32 field_control_frame;
+static void autoload_start(void) { al_phase = AL_WANT_DIR; al_timer = 0; al_target = -1; hold_black |= 2; }
+static void autoload_end(void)
+{
+    hold_black &= ~2;
+}
+
+
 static void pick_newest(int n)
 {
     u32 best_d = 0, best_t = 0;
@@ -85,7 +94,13 @@ void qs_pad(void)
     f_padproc();
     skip_frame();
     chest_frame();
-    if (!FEATURES[5] || al_phase == AL_OFF || al_phase == AL_DONE) return;
+    if (!FEATURES[5]) return;
+    if (al_phase == AL_OFF || al_phase == AL_DONE) {
+        if (hold_black & 2) {                          /* keep black until the game is up (or we gave up) */
+            if (al_phase == AL_OFF || field_control_frame + 2 >= RD32(0x003ba700u) || ++al_wait > 60 * 20) autoload_end();
+        }
+        return;
+    }
     if (++al_timer > 60 * 30) { al_phase = AL_OFF; return; }  /* give up after ~30 s: normal load list */
     switch (al_phase) {
     case AL_WANT_DIR:
@@ -100,7 +115,7 @@ void qs_pad(void)
         break;
     }
     case AL_READY:                                    /* wait for the load list to run */
-        if (LIST_REPEAT == 1) {
+        if (LIST_REPEAT != 0) {                       /* it ran since we zeroed it */
             int t = al_target;
             if (t == -2) {                             /* longest play time */
                 u32 best = 0;
@@ -125,13 +140,12 @@ void qs_pad(void)
         break;
     case AL_MSG:                                      /* dismiss "Load successful." */
         if (MSG_WAITING) { if (++al_wait > 2) press_x(); }
-        else if (al_wait) al_phase = AL_DONE;
+        else if (al_wait) { al_phase = AL_DONE; al_wait = 0; }
         break;
     }
 }
 
 int qs_autoload_ready(void) { return al_phase >= AL_READY || al_phase == AL_OFF; }
-static void autoload_start(void) { al_phase = AL_WANT_DIR; al_timer = 0; al_target = -1; }
 
 /* Test only: the test pnach sets 0xFE0F0 = 0x5153000b (b = pad bits: 1 X, 2 START) to press that button
  * once at the first logo through the test pad injection (0xF000C). Never set by release sections. */
