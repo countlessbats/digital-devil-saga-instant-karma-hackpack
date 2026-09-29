@@ -57,6 +57,9 @@ While the logos or the intro movie are playing:
 ### SceneSkip
 Press **START** during a cutscene to skip it, including scenes the game normally refuses to skip ("This event cannot be skipped."). One press carries on through scenes that follow straight after, until you have control again. The parts between scene segments are fast-forwarded when Native Turbo is on.
 
+### OpenChests
+Inspecting a chest (or a floating jewel) opens it straight away: the "A strange object lies on the floor. Touch it?" question and its Yes/No are answered for you. The "Obtained ..." message stays so you see what you got.
+
 ### WordTripper
 All text fades in at once instead of letter by letter.
 
@@ -73,7 +76,7 @@ Savestates made with a mod on keep that mod's code in memory; after changing whi
 With Python 3 from the repository:
 ```
 python tools/install.py "<PCSX2 data folder>"              # all mods
-python tools/install.py "<PCSX2 data folder>" --no-turbo   # skip a mod: --no-turbo / --no-set / --no-prey / --no-buttons / --no-subtle / --no-sun / --no-wordtripper / --no-twoforone / --no-quickstart / --no-sceneskip
+python tools/install.py "<PCSX2 data folder>" --no-turbo   # skip a mod: --no-turbo / --no-set / --no-prey / --no-buttons / --no-subtle / --no-sun / --no-wordtripper / --no-twoforone / --no-quickstart / --no-sceneskip / --no-openchests
 ```
 This copies the patch file, enables the chosen mods and sets EE Cycle Rate 300% in the game's settings file (other settings are kept).
 

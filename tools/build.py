@@ -147,6 +147,7 @@ PATCH_WT = 'Good Karma - WordTripper'
 PATCH_TFO = 'Good Karma - TwoForOne'
 PATCH_QS = 'Good Karma - QuickStart'
 PATCH_SKIP = 'Good Karma - SceneSkip'
+PATCH_CHEST = 'Good Karma - OpenChests'
 ATLAS_ADDR = 0x000A0000
 
 def build(include_test=False):
@@ -245,6 +246,13 @@ def build(include_test=False):
     lines.append('patch=1,EE,0022F2F4,word,24020000')            # 'cannot be skipped' check -> skippable
     hook(lines, 0x001006A4, syms['qs_pad'], 'main loop pad processing (shared with QuickStart)')
     hook(lines, 0x00125980, syms['field_hook'], 'field player-control step (tells SceneSkip the player has control)')
+    # ---- OpenChests: inspecting a chest opens it at once (question and Yes answered automatically) ----
+    lines += ['', '[%s]' % PATCH_CHEST, 'author=Good Karma v%s' % VERSION,
+              'description=Inspecting a chest opens it straight away: no "Touch it?" question or Yes/No. '
+              'The "Obtained" message stays so you see what you got.']
+    blob(lines)
+    lines.append('patch=1,EE,000FD21C,word,00000001')            # FEATURES[7]: OpenChests on
+    hook(lines, 0x001006A4, syms['qs_pad'], 'main loop pad processing (shared with QuickStart)')
     # ---- WordTripper: every glyph starts fading in at once (0x1955d8 reveal gate forced open) ----
     lines += ['', '[%s]' % PATCH_WT, 'author=Good Karma v%s' % VERSION,
               'description=Text appears all at once, fading in together instead of letter by letter.']
