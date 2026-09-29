@@ -36,9 +36,12 @@ typedef struct {
     int box_x0, box_y0, box_x1, box_y1; /* outline around the grid (screen units); dividers span y0..y1 */
     int line_w, line_h;                 /* vertical line width, horizontal line height */
     int mark_dx, mark_dy;               /* per-skill "new" marker, relative to the end of the name */
+    int arrow_dx;                       /* cursor's left-pointing arrow, relative to the end of the name */
+    int row_lines, row_line_dy;         /* horizontal lines between grid rows (on/off, y offset) */
+    u32 box_fill;                       /* translucent panel fill inside the box (0xRRGGBBAA, 0 = none) */
 } Layout;
 
-#define LAY_MAGIC 0x4c415913
+#define LAY_MAGIC 0x4c415915
 #define LAY ((volatile Layout *)0x000FF000)
 
 /* game functions */
@@ -111,7 +114,7 @@ static void layout_defaults(void)
     if (l->magic == LAY_MAGIC) return;
     /* ASSIGNED top-left, HELP top-right, status under HELP, tabs under ASSIGNED,
      * LEARNED as a 3x8 grid across the full width (px ~ units/12.8 across, /7.47 down) */
-    l->asg_x = 256;   l->asg_y = 187;  l->asg_rowh = 0;
+    l->asg_x = 256;   l->asg_y = 187;  l->asg_rowh = 0x98;
     l->help_dx = 4416; l->help_dy = -2442;
     l->port_dx = 0;    l->port_dy = 709;
     l->cat_x = -608;   l->cat_y = 1438;
@@ -133,9 +136,11 @@ static void layout_defaults(void)
     l->frames = 0;
     l->div_color = 0x44445a80; l->div_dx = 88; l->div_w = 16;
     l->undo_keep = 53; l->undo_lx = 152; l->undo_x = 1064; l->undo_rx = 1816;
-    l->box_x0 = 16; l->box_y0 = 1980; l->box_x1 = 8166; l->box_y1 = 3362;
+    l->box_x0 = 64; l->box_y0 = 1980; l->box_x1 = 8166; l->box_y1 = 3362;
     l->line_w = 16; l->line_h = 16;
     l->mark_dx = -0xb0; l->mark_dy = -0x38;
+    l->arrow_dx = 0; l->row_lines = 1; l->row_line_dy = -16;
+    l->box_fill = 0x00000030;
     l->magic = LAY_MAGIC;
 }
 
@@ -327,18 +332,29 @@ static void draw_grid(u32 W)
     if (l->div_color) {
         int x0 = l->box_x0, y0 = l->box_y0, x1 = l->box_x1, y1 = l->box_y1, lw = l->line_w, lh = l->line_h;
         int col = (int)l->div_color;
+        if (l->box_fill) f_fillquad(x0, y0, 0, x1 - x0, y1 - y0, (int)l->box_fill, PRIO);
         f_fillquad(x0, y0, 0, x1 - x0, lh, col, PRIO);            /* top: continues the pane's bottom edge */
         f_fillquad(x0, y1 - lh, 0, x1 - x0, lh, col, PRIO);       /* bottom */
         f_fillquad(x0, y0, 0, lw, y1 - y0, col, PRIO);            /* left */
         f_fillquad(x1 - lw, y0, 0, lw, y1 - y0, col, PRIO);       /* right */
         for (int c = 1; c < cols; c++)
             f_fillquad(l->grid_x + c * l->grid_pitch + l->div_dx, y0, 0, l->div_w, y1 - y0, col, PRIO);
+        if (l->row_lines)
+            for (int r = 1; r < rows; r++)
+                f_fillquad(x0, l->grid_y + r * rowh + l->row_line_dy, 0, x1 - x0, 16, col, PRIO);
     }
 
     /* cursor highlight in the cursor's column */
     if (s_cnt) {
         RD32(L + 0x24) = 0;
+        /* one left-pointing arrow just past the highlighted name (right arrow W+0x7c); the
+         * right-pointing left arrow (W+0x78) is parked off-screen */
+        u32 s78 = RD32(W + 0x78), s7c = RD32(W + 0x7c);
+        const char *cn = cur < n ? (const char *)RD32(cells[cur] + 4) : 0;
+        RD32(W + 0x78) = (u32)-0x4000;
+        RD32(W + 0x7c) = (u32)(l->name_dx + (cn ? text_width(cn) : 0) + l->arrow_dx);
         f_cursor(l->grid_x + ccol * l->grid_pitch, l->grid_y + (crow - grid_top) * rowh, 0, W, PRIO);
+        RD32(W + 0x78) = s78; RD32(W + 0x7c) = s7c;
     }
 
     /* one row per cell; each cell is drawn as the list's "top" item, and the callback draws the
@@ -480,7 +496,22 @@ static void draw_set_screen(u32 task, int slot_mode)
     u32 AL = RD32(asg + 0x14);
     u32 s_rowh = RD32(AL + 0x28);
     if (l->asg_rowh) RD32(AL + 0x28) = l->asg_rowh;
+    /* ASSIGNED's dark panel (sheet widget+0x1c, sprite widget+0x28+1) has a fixed height; crop it
+     * (and its texture v range) by however much the rows were tightened, then restore */
+    u32 pdef = 0, pimg = 0, s_ph = 0, s_pv = 0;
+    int orig_rowh = (int)s_rowh, nrow = (int)RD32(AL + 0x0c);
+    if (l->asg_rowh && l->asg_rowh < orig_rowh) {
+        u32 psh = RD32(asg + 0x1c); int pix = (int)RD32(asg + 0x28) + 1;
+        pdef = f_sprdef(psh, pix);
+        pimg = RD32(psh + 0x10) + (u32)pix * 0x80;
+        s_ph = RD32(pdef + 0x10); s_pv = RD32(pdef + 0x5c);
+        int cut = nrow * (orig_rowh - l->asg_rowh);
+        int vspan = (int)RD32(pimg + 0x60) - (int)RD32(pimg + 0x58);
+        RD32(pdef + 0x10) = (u32)((int)s_ph - cut);
+        RD32(pdef + 0x5c) = (u32)((int)s_pv - vspan * cut / (int)s_ph);
+    }
     if (!(l->skip & 0x200000)) f_widget(l->asg_x, l->asg_y, 0, asg, PRIO);
+    if (pdef) { RD32(pdef + 0x10) = s_ph; RD32(pdef + 0x5c) = s_pv; }
     RD32(AL + 0x28) = s_rowh;
 
     if (!(l->skip & 16)) {
