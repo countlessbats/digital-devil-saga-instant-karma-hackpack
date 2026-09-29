@@ -1,7 +1,7 @@
 # Good Karma
 
 Quality-of-life mods for **Shin Megami Tensei: Digital Devil Saga** (USA, SLUS-20974) on PCSX2 2.x.
-All three mods live in one patch file and can be switched on or off independently in PCSX2.
+All four mods live in one patch file and can be switched on or off independently in PCSX2.
 
 ## Mods
 
@@ -27,15 +27,18 @@ A redesigned skill SET screen:
 
 ### Prey Eyes
 Battle information, adapted from the Prey Eyes 2 mod for SMT III Nocturne HD:
-- **Reticle result:** while targeting, the centre of the targeting reticle shows what the selected skill will do to that enemy, pulsing like the original ring: green **!** weak, red shield/reflect/drain for null, reflect and drain, a split shield for resist, a white ring for a normal hit, and a white **?** when you don't know yet. Support skills leave the reticle unchanged.
-- **Affinity board:** for a single targeted enemy, all nine elements (Phys, Gun, Fire, Ice, Elec, Force, Earth, Expel, Death) and five ailments (Charm, Poison, Mute, Panic, Sleep) with their result icons, plus the enemy's active buffs and debuffs.
-- **Buffs and debuffs:** Attack, Magic, Defense and Hit/Evasion levels (-kaja/-nda, up to 4 steps) as small icons under each party member's portrait.
+- **Reticle result:** while targeting, the centre of the reticle shows what the selected skill will do to that enemy and pulses with it: green **!** weak, red icons for null, reflect and drain, a split shield for resist, the game's own ring in white for a normal hit, and a white **?** when you don't know yet. Support skills leave the reticle unchanged.
+- **Affinity board:** above the targeted enemy's name: all nine elements (Phys, Gun, Fire, Ice, Elec, Force, Earth, Expel, Death) with their results, and above them the ailments (Charm, Poison, Mute, Panic, Sleep) the enemy resists, blocks or is weak to. Ailments it takes normally are left out. This row is the enemy's resistance, not its current status.
+- **Buffs and debuffs:** Attack, Magic, Defense and Hit/Evasion levels (-kaja/-nda, up to 4 steps) above each enemy and under each party member's portrait. The help bar moves down slightly to make room.
 - **Knowledge:** affinities start unknown. Using a skill on an enemy teaches that attribute for its species; killing one or using Analyze reveals everything. Knowledge is stored inside your save file, so each save keeps its own.
+
+### BattleButtons
+In the battle command menu, **R1** passes the turn and **L1** retreats, with no confirmation step.
 
 ## Install
 
 1. Copy `SLUS-20974_D7273511.pnach` into your PCSX2 `patches` folder (PCSX2: *Tools → Open Data Directory*, then `patches`).
-2. In PCSX2, right-click the game → **Properties → Patches**, and tick **Good Karma - Native Turbo** and/or **Good Karma - SET Screen**.
+2. In PCSX2, right-click the game → **Properties → Patches**, and tick the Good Karma mods you want.
 3. For full 6x turbo: in the same Properties window, **Emulation → EE Cycle Rate → 300%**.
 4. Start (or restart) the game. Patches apply at boot.
 
@@ -45,7 +48,7 @@ Savestates made with a mod on keep that mod's code in memory; after changing whi
 With Python 3 from the repository:
 ```
 python tools/install.py "<PCSX2 data folder>"              # all mods
-python tools/install.py "<PCSX2 data folder>" --no-turbo   # skip a mod: --no-turbo / --no-set / --no-prey
+python tools/install.py "<PCSX2 data folder>" --no-turbo   # skip a mod: --no-turbo / --no-set / --no-prey / --no-buttons
 ```
 This copies the patch file, enables the chosen mods and sets EE Cycle Rate 300% in the game's settings file (other settings are kept).
 

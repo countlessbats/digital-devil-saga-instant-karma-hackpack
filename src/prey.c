@@ -7,6 +7,7 @@
 #include "prey_atlas.h"
 
 #define ATLAS_ADDR   0x000A0000u
+#define WBLOB        0x000BF000u      /* scratch texture blob for the white ring CLUT */
 /* Knowledge lives in the unused tail of the game's save block (GBWK, 0x33600 bytes, pointer at
  * 0x3baa00), so it is written to and read from the memory card with the rest of the save.
  * u16 per species: bit n = attr n known, 0x8000 = everything known. */
@@ -22,37 +23,39 @@
 #define f_draw_c      ((void (*)(int, int, int, u32 *, int, u32, int, int))0x002bf438)
 #define f_aisyo       ((u32 (*)(u32, u32, int))0x001a7410)
 #define f_skill_attr  ((int (*)(u32, u32))0x001a2f00)
-#define f_text        ((u32 (*)(int, int, int, u32, const char *, int))0x00197760)
-#define f_textprep    ((void (*)(u32, int, int))0x001958a0)
-#define f_textsubmit  ((void (*)(u32))0x00194920)
 
 #define PRIO 0x53
 
 typedef struct {
     u32 magic;
-    int ret_size;             /* reticle icon size, px */
-    int board_x, board_y;     /* board origin (screen units: x 1/16 px, y 1/8 line) */
-    int elem_pitch, elem_size, res_size, res_dy;
-    int ail_x, ail_y, ail_pitch, ail_size;
-    int ebuf_x, ebuf_y, ebuf_pitch, ebuf_size;
-    int pbuf_dx, pbuf_dy, pbuf_pitch, pbuf_size;
+    int ret_size, ret_unknown;          /* reticle result icon size / ? size, px */
+    int elem_pitch, elem_size, res_size;
+    int board_y, res_dy;                /* element row y and result offset (lines*8) */
+    int ail_y, ail_size, ail_gap;       /* ailment row: y, icon size, gap between groups (px) */
+    int ebuf_pitch, ebuf_size;          /* enemy buffs above heads */
+    int head_lift, head_dy;             /* world lift (x100) and screen offset (lines*8) */
+    int pbuf_dx, pbuf_dy, pbuf_pitch, pbuf_size;   /* party buffs under the portraits */
+    int help_y;                         /* battle help window y, lines (game default 406) */
     int debug_all_known;
-    int debug_attr;           /* test: 1 + attr forces the attribute used for the reticle */
+    int debug_attr;                     /* test: 1 + attr forces the attribute used for the reticle */
 } Prey;
-#define PREY_MAGIC 0x50524504
+#define PREY_MAGIC 0x50524507
 #define PR ((volatile Prey *)0x000FD000)
 
 static void prey_defaults(void)
 {
     volatile Prey *p = PR;
     if (p->magic == PREY_MAGIC) return;
-    p->ret_size = 38;
-    p->board_x = 0x850; p->board_y = 0x2f0;
-    p->elem_pitch = 0x1c0; p->elem_size = 22; p->res_size = 18; p->res_dy = 0xb8;
-    p->ail_x = 0x9a0; p->ail_y = 0x440; p->ail_pitch = 0x240; p->ail_size = 15;
-    p->ebuf_x = 0x1780; p->ebuf_y = 0x440; p->ebuf_pitch = 0x150; p->ebuf_size = 16;
-    p->pbuf_dx = 0x1c0; p->pbuf_dy = 0x220; p->pbuf_pitch = 0x110; p->pbuf_size = 14;
-    p->debug_all_known = 0;
+    p->ret_size = 28; p->ret_unknown = 22;
+    /* board: centred on the name bar (x 4096), stacked above it: ailments, elements, results */
+    p->elem_pitch = 0x120; p->elem_size = 16; p->res_size = 14;
+    p->board_y = 254; p->res_dy = 144;
+    p->ail_y = 110; p->ail_size = 15; p->ail_gap = 5;
+    p->ebuf_pitch = 0x110; p->ebuf_size = 16;
+    p->head_lift = 0; p->head_dy = -0x1e0;
+    p->pbuf_dx = 0x1c0; p->pbuf_dy = 616; p->pbuf_pitch = 0xf0; p->pbuf_size = 14;
+    p->help_y = 413;
+    p->debug_all_known = 0; p->debug_attr = 0;
     p->magic = PREY_MAGIC;
 }
 
@@ -106,11 +109,14 @@ static u32 prey_sheet(void)
     return (u32)sheet;
 }
 
-/* Replaces btlExit's call to 0x1f2618 (0x1a1158): release our texture with the battle. */
+static u32 wtex, wsheet_src, wowner;
+
+/* Replaces btlExit's call to 0x1f2618 (0x1a1158): release our textures with the battle. */
 #define f_exit_orig ((void (*)(void))0x001f2618)
 void prey_battle_exit(void)
 {
     if (tex) { f_tex_free(tex); tex = 0; tex_owner = 0; }
+    if (wtex) { f_tex_free(wtex); wtex = 0; wsheet_src = 0; wowner = 0; }
     f_exit_orig();
 }
 
@@ -230,24 +236,78 @@ void prey_reticle(u32 unit, u32 work, int i)
     if (list && RD32(list + 4) == 1 && unit && is_enemy(unit)) draw_board(unit);
 }
 
-/* Replaces the ring draw calls at 0x1c00ec: sprites 0x1a/0x1b (red inner ring + its pulse)
- * become the result icon for the current target, tinted by result, pulsing the same way. */
+/* White copy of the game's reticle ring (normal hits). The ring sprites live in an 8-bit
+ * paletted texture. We load a tiny texture whose CLUT is the game's CLUT turned white, then draw
+ * the game's own ring sprite through a copy of its sheet whose texture object uses that CLUT:
+ * same sprite, same pulse, white instead of red. */
+static u32 wsheet[16], wtexarr[8];
+static u32 wobj[16] __attribute__((aligned(16)));
+static u32 wgs[16] __attribute__((aligned(16)));
+
+static u32 white_sheet(u32 sh)
+{
+    u32 bt = BATTLE;
+    if (wtex && wsheet_src == sh && wowner == bt) return (u32)wsheet;
+    u32 gimg = RD32(sh + 0x10) + 0x1a * 0x80;
+    u32 ti = RD32(gimg + 0x14);
+    if (ti >= 8 || RD32(sh + 0x1c) > 8) return 0;
+    u32 gobj = RD32(RD32(sh + 0x24) + ti * 4);
+    u32 clut = gobj ? RD32(gobj + 0x30) : 0;
+    if (!clut || !RD32(gobj + 0x28)) return 0;
+    volatile u8 *b = (volatile u8 *)WBLOB;
+    for (int i = 0; i < 0x40; i++) b[i] = 0;
+    b[0x10] = 1; b[0x12] = 16; b[0x14] = 16; b[0x16] = 0x13;
+    for (int i = 0; i < 256; i++) {
+        u32 c = RD32(clut + i * 4);
+        u32 r = c & 0xff, g = (c >> 8) & 0xff, bl = (c >> 16) & 0xff;
+        u32 m = r > g ? r : g;
+        if (bl > m) m = bl;
+        m = m * 3 / 2;
+        if (m > 255) m = 255;
+        b[0x40 + i * 4] = m; b[0x41 + i * 4] = m; b[0x42 + i * 4] = m; b[0x43 + i * 4] = c >> 24;
+    }
+    for (int i = 0; i < 256; i++) b[0x440 + i] = 0;
+    if (wtex) f_tex_free(wtex);
+    wtex = f_tex_load(WBLOB);
+    wowner = bt;
+    if (!wtex || !RD32(wtex + 0x14)) return 0;
+    u32 cbp = RD32(RD32(wtex + 0x14) + 0xc) >> 6;
+    for (int i = 0; i < 16; i++) { wobj[i] = RD32(gobj + i * 4); wgs[i] = RD32(RD32(gobj + 0x28) + i * 4); }
+    wobj[0x28 / 4] = (u32)wgs;
+    wgs[0x24 / 4] = (wgs[0x24 / 4] & ~(0x3fffu << 5)) | (cbp << 5);   /* TEX0.CBP (bits 37..50) */
+    for (int i = 0; i < 16; i++) wsheet[i] = RD32(sh + i * 4);
+    for (u32 i = 0; i < RD32(sh + 0x1c); i++) wtexarr[i] = RD32(RD32(sh + 0x24) + i * 4);
+    wtexarr[ti] = (u32)wobj;
+    wsheet[9] = (u32)wtexarr;
+    wsheet_src = sh;
+    return (u32)wsheet;
+}
+
+/* Replaces the ring draw calls at 0x1c00ec: sprites 0x1a/0x1b (red inner ring + its pulse).
+ * Normal hits keep the game's ring, drawn white; other results draw the result icon in its
+ * place. The caller has already scaled the ring's definition for the pulse (0x1c2e90) and
+ * offset (x, y) to keep it centred, so the icon uses the same centre and scale. */
 #define f_draw438 ((void (*)(int, int, int, u32 *, int, u32, int, int))0x002bf438)
 void prey_ring(int x, int y, int z, u32 *cols, int flags, u32 sh, int spr, int prio)
 {
     if ((spr == 0x1a || spr == 0x1b) && cur_target && is_enemy(cur_target)) {
-        int attr = action_attr();
-        int r = result(cur_target, attr);
-        if (r != R_NONE && prey_sheet()) {
-            int s = PR->ret_size;
-            /* sprite 0x1a is 31x36 texels drawn at (x,y) (the caller already added its offset) */
-            int cx = x + 31 * 8, cy = y + 36 * 4;
+        int r = result(cur_target, action_attr());
+        if (r == R_NORMAL) {
+            u32 ws = white_sheet(sh);
+            if (ws) { f_draw438(x, y, z, cols, flags, ws, spr, prio); return; }
+        } else if (r != R_NONE && prey_sheet()) {
+            u32 gd = RD32(sh + 0x18) + spr * 0xa0;
+            if (RD32(gd + 0x9c)) gd = RD32(gd + 0x9c);
+            int gw = (int)RD32(gd + 0x0c), gh = (int)RD32(gd + 0x10);
+            int cx = x + gw / 2, cy = y + gh / 2;
+            int s = r == R_UNKNOWN ? PR->ret_unknown : PR->ret_size;
+            int sw = s * 16 * gw / 0x1f0, shh = s * 8 * gw / 0x1f0;   /* scale with the pulse */
             u32 t = result_tint(r);
             u32 c2[4];
             for (int k = 0; k < 4; k++) c2[k] = mulc(cols[k], t);
             u8 *d = defs[result_spr_ret[r]];
-            W32(d, 0x0c) = s * 16; W32(d, 0x10) = s * 8;
-            f_draw_c(cx - s * 8, cy - s * 4, z, c2, 0, prey_sheet(), result_spr_ret[r], prio);
+            W32(d, 0x0c) = sw; W32(d, 0x10) = shh;
+            f_draw_c(cx - sw / 2, cy - shh / 2, z, c2, 0, prey_sheet(), result_spr_ret[r], prio);
             return;
         }
     }
@@ -292,22 +352,92 @@ static void draw_board(u32 u)
     if (!prey_sheet()) return;
     u32 white = rgba(0x80, 0x80, 0x80, 0x80);
     int attr_now = action_attr();
+    int x0 = 4096 - (8 * p->elem_pitch + p->elem_size * 16) / 2;
     for (int i = 0; i < 9; i++) {
-        int x = p->board_x + i * p->elem_pitch;
+        int x = x0 + i * p->elem_pitch;
         int hl = board_attrs[i] == attr_now;
         icon(board_elem[i], x, p->board_y, p->elem_size, hl ? white : rgba(0x70, 0x70, 0x70, 0x80));
-        int r = result(u, board_attrs[i]);
-        int spr = result_spr_res[r];
+        int spr = result_spr_res[result(u, board_attrs[i])];
         if (spr >= 0) icon(spr, x + (p->elem_size - p->res_size) * 8, p->board_y + p->res_dy, p->res_size, white);
     }
+    /* ailments: only those that are not a plain hit (unknown ones show ?), centred */
+    int show[5], n = 0;
     for (int i = 0; i < 5; i++) {
-        int x = p->ail_x + i * p->ail_pitch;
-        icon(ail_spr[i], x, p->ail_y, p->ail_size, white);
         int r = result(u, ail_attrs[i]);
-        int spr = result_spr_res[r];
-        if (spr >= 0) icon(spr, x + p->ail_size * 16 + 0x20, p->ail_y, p->ail_size, white);
+        if (r != R_NORMAL && r != R_NONE) show[n++] = i;
     }
-    draw_buffs(u, p->ebuf_x, p->ebuf_y, p->ebuf_pitch, p->ebuf_size);
+    int gw = (p->ail_size * 2 + 2) * 16, pitch = gw + p->ail_gap * 16;
+    int ax = 4096 - (n * pitch - p->ail_gap * 16) / 2;
+    for (int k = 0; k < n; k++) {
+        int i = show[k], x = ax + k * pitch;
+        icon(ail_spr[i], x, p->ail_y, p->ail_size, white);
+        int spr = result_spr_res[result(u, ail_attrs[i])];
+        if (spr >= 0) icon(spr, x + (p->ail_size + 2) * 16, p->ail_y, p->ail_size, white);
+    }
+}
+
+/* ---- enemy buffs above their heads ------------------------------------------------ */
+
+/* VU0 helpers: save/restore vf10, the vector the game's projection routines work on. */
+__asm__(".text\n.set push\n.set noreorder\n"
+        ".globl vf10_save\nvf10_save:\n .word 0xF88A0000\n jr $31\n nop\n"
+        ".globl vf10_load\nvf10_load:\n .word 0xD88A0000\n jr $31\n nop\n.set pop\n");
+void vf10_save(void *p);
+void vf10_load(void *p);
+#define f_unit_anchor ((int (*)(u32, int))0x001d6360)   /* bone 0 position into vf10, 0 if none */
+#define f_unit_pos    ((void (*)(u32))0x001f6498)       /* unit position into vf10 */
+#define f_project     ((int (*)(int *))0x001f6158)      /* vf10 -> screen px/lines, 0 if off */
+
+static float vbuf[4] __attribute__((aligned(16)));
+
+/* Screen position for a unit's overhead row. The unit's root position is stable; its bone 0
+ * (roughly the chest/head) bobs with the idle animation. So the height above the root is
+ * measured once, the first time the unit is seen, and the row follows the root. */
+static u32 hp_unit[16];
+static int hp_dy[16];
+
+static int project_root(u32 u, int *sx, int *sy)
+{
+    int out[4];
+    f_unit_pos(u);
+    if (PR->head_lift) {
+        vf10_save(vbuf);
+        vbuf[1] -= (float)PR->head_lift / 100.0f;
+        vf10_load(vbuf);
+    }
+    if (!f_project(out)) return 0;
+    *sx = out[0]; *sy = out[1];
+    return 1;
+}
+
+static int head_pos(int slot, u32 u, int *sx, int *sy)
+{
+    if (!project_root(u, sx, sy)) return 0;
+    if (hp_unit[slot] != u) {
+        int out[4];
+        hp_unit[slot] = u; hp_dy[slot] = 0;
+        if (f_unit_anchor(u, 0) && f_project(out)) hp_dy[slot] = out[1] - *sy;
+    }
+    *sy += hp_dy[slot];
+    return 1;
+}
+
+static void draw_enemy_buffs(void)
+{
+    volatile Prey *p = PR;
+    u32 b = BATTLE;
+    if (!b || !prey_sheet()) return;
+    int n = 0;
+    for (u32 u = RD32(b + 0x228); u && n < 16; u = RD32(u + 0x344), n++) {
+        if (!is_enemy(u) || *(volatile u16 *)(u + 0x126) == 0 || !(RD32(u + 0x110) & 1)) continue;
+        int cnt = 0;
+        for (int k = 0; k < 4; k++) if (buff_level(u, k)) cnt++;
+        if (!cnt) continue;
+        int sx, sy;
+        if (!head_pos(n, u, &sx, &sy)) continue;
+        int w = (cnt - 1) * p->ebuf_pitch + p->ebuf_size * 16;
+        draw_buffs(u, sx * 16 - w / 2, sy * 8 + p->head_dy, p->ebuf_pitch, p->ebuf_size);
+    }
 }
 
 static void learn_kills(void);
@@ -319,8 +449,13 @@ void prey_party_panel(u32 unit, u32 work, int slot)
 {
     prey_defaults();
     f_panel_part(unit, work, slot);
-    if (slot == 0) learn_kills();
     volatile Prey *p = PR;
+    if (slot == 0) {
+        learn_kills();
+        draw_enemy_buffs();
+        u32 hw = RD32(GP - 0x5914);                 /* battle help window: +0x3c = y (lines) */
+        if (hw && p->help_y) RD32(hw + 0x3c) = p->help_y;
+    }
     int off = (slot * 41) * 16;                       /* ((5*slot)*8 + slot) * 16 */
     int x = (int)RD32(work + 0xc + off), y = (int)RD32(work + 0x10 + off);
     draw_buffs(unit, x * 16 + p->pbuf_dx, y * 8 + p->pbuf_dy, p->pbuf_pitch, p->pbuf_size);
@@ -331,13 +466,11 @@ void prey_party_panel(u32 unit, u32 work, int slot)
 #define ANALYZE 0xbf
 #define MENU_X  0x00324531u     /* menu pad copy: X, bit 0x80 = pressed this frame */
 
-/* Replaces the target panel's input call at 0x1c13a0. When X confirms a target, learn the
- * skill's attribute for every selected enemy (Analyze teaches everything). */
-#define f_target_input ((void (*)(u32, u32, int))0x001c08b8)
-void prey_target_input(u32 battle, u32 work, int mode)
+/* Called from the target panel input hook (battle_buttons.c) around the game's handler. When X
+ * confirms a target, learn the skill's attribute for every selected enemy (Analyze teaches
+ * everything). */
+void prey_after_target_input(u32 work, int confirm)
 {
-    int confirm = (RD8(MENU_X) & 0x80) != 0;
-    f_target_input(battle, work, mode);
     if (!confirm) return;
     int st = (int)RD32(work);
     if (st != 3 && st != 5) return;

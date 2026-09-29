@@ -1,6 +1,6 @@
 r"""Install Good Karma into a PCSX2 user folder.
 
-Usage: python tools/install.py [PCSX2_USER_DIR] [--no-turbo] [--no-set] [--no-prey]   (default <local path>)
+Usage: python tools/install.py [PCSX2_USER_DIR] [--no-turbo] [--no-set] [--no-prey] [--no-buttons]   (default <local path>)
 Copies patches\SLUS-20974_D7273511.pnach, removes this project's older patches\D7273511.pnach,
 enables the chosen patches in gamesettings\SLUS-20974_D7273511.ini ([Patches] Enable = ...)
 and sets EmuCore/Speedhacks EECycleRate = 3 there (needed for full 6x turbo). Other keys are kept.
@@ -16,8 +16,8 @@ flags = [a for a in sys.argv[1:] if a.startswith('--')]
 user = args[0] if args else r'<local path>'
 if not os.path.isdir(os.path.join(user, 'patches')) or not os.path.isdir(os.path.join(user, 'inis')):
     raise SystemExit('not a PCSX2 user folder: ' + user)
-want = [build.PATCH_TURBO, build.PATCH_SET, build.PATCH_PREY]
-skip = {'--no-turbo': build.PATCH_TURBO, '--no-set': build.PATCH_SET, '--no-prey': build.PATCH_PREY}
+want = [build.PATCH_TURBO, build.PATCH_SET, build.PATCH_PREY, build.PATCH_BB]
+skip = {'--no-turbo': build.PATCH_TURBO, '--no-set': build.PATCH_SET, '--no-prey': build.PATCH_PREY, '--no-buttons': build.PATCH_BB}
 want = [w for w in want if w not in [skip[f] for f in flags if f in skip]]
 
 shutil.copy(os.path.join(ROOT, 'build', build.PNACH), os.path.join(user, 'patches', build.PNACH))

@@ -31,6 +31,40 @@ INJ_ASM = """
     addiu $sp, $sp, 0x10
 """
 
+TR_CODE = 0x000F0400
+TR_ASM = '''
+    .set noreorder
+    lui   $8, 0x000F
+    lw    $9, -0x1004($8)        # 0xFEFFC... use 0xFE000 buffer: $8=0xF0000 -> base 0xFE000
+    nop
+'''
+# entry trace of 0x2bf438: logs (ra, x, y, spr) while 0xFEFFC == 0x7ACE. Uses only $1/$24/$25.
+TR_ASM = '''
+    .set noreorder
+    .set noat
+    lui   $24, 0x0010
+    lw    $25, -0x1004($24)
+    addiu $1, $zero, 0x7ACE
+    bne   $25, $1, go
+    nop
+    lw    $25, -0x2000($24)
+    sltiu $1, $25, 200
+    beq   $1, $zero, go
+    nop
+    addiu $1, $25, 1
+    sw    $1, -0x2000($24)
+    sll   $25, $25, 4
+    addu  $25, $25, $24
+    sw    $31, -0x1ff0($25)
+    sw    $4, -0x1fec($25)
+    sw    $5, -0x1fe8($25)
+    sw    $10, -0x1fe4($25)
+go:
+    addiu $29, $29, -0x60
+    j     0x2bf440
+    sd    $21, 0x38($29)
+'''
+
 if __name__ == '__main__':
     dest = sys.argv[1] if len(sys.argv) > 1 else r'<local path>'
     text, _ = build.build(include_test=True)
@@ -41,5 +75,10 @@ if __name__ == '__main__':
     lines.append('patch=1,EE,%08X,word,%08X' % (INJ_SITE, build.jal(INJ_CODE)))
     for site in (0x1c0244, 0x1c038c):   # arrows only; 0x1c00ec belongs to Prey Eyes
         lines.append('patch=1,EE,%08X,word,%08X' % (site, build.jal(syms['trace_draw438'])))
+    if os.environ.get('TRACE438'):
+        tw = build.asm(TR_ASM, TR_CODE)
+        for i, w in enumerate(tw): lines.append('patch=1,EE,%08X,word,%08X' % (TR_CODE + 4 * i, w))
+        lines.append('patch=1,EE,002BF438,word,%08X' % (0x08000000 | (TR_CODE >> 2)))
+        lines.append('patch=1,EE,002BF43C,word,00000000')
     open(os.path.join(dest, build.PNACH), 'w').write('\n'.join(lines) + '\n')
     print('test pnach ->', dest)

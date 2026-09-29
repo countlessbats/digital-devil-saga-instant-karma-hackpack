@@ -140,6 +140,7 @@ PNACH = 'SLUS-20974_D7273511.pnach'
 PATCH_TURBO = 'Good Karma - Native Turbo'
 PATCH_SET = 'Good Karma - SET Screen'
 PATCH_PREY = 'Good Karma - Prey Eyes'
+PATCH_BB = 'Good Karma - BattleButtons'
 ATLAS_ADDR = 0x000A0000
 
 def build(include_test=False):
@@ -185,7 +186,16 @@ def build(include_test=False):
     hook(lines, 0x001C00EC, syms['prey_ring'], 'reticle ring sprite draw')
     hook(lines, 0x001B6E84, syms['prey_party_panel'], 'party panel per-member draw')
     hook(lines, 0x001A1158, syms['prey_battle_exit'], 'btlExit teardown call')
-    hook(lines, 0x001C13A0, syms['prey_target_input'], 'target panel input')
+    lines.append('patch=1,EE,000FD200,word,00000001')            # FEATURES[0]: Prey Eyes on
+    hook(lines, 0x001C13A0, syms['bb_target_input'], 'target panel input (shared)')
+    # ---- BattleButtons ----
+    lines += ['', '[%s]' % PATCH_BB,
+              'author=Good Karma v%s' % VERSION,
+              'description=Battle command menu: R1 passes the turn and L1 retreats, with no confirmation.']
+    blob(lines)
+    lines.append('patch=1,EE,000FD204,word,00000001')            # FEATURES[1]: BattleButtons on
+    hook(lines, 0x001BF134, syms['bb_command_hook'], 'command panel pre-input')
+    hook(lines, 0x001C13A0, syms['bb_target_input'], 'target panel input (shared)')
     build.syms = syms
     return '\n'.join(lines) + '\n', words
 
