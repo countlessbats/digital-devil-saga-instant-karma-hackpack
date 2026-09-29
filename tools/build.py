@@ -141,6 +141,9 @@ PATCH_TURBO = 'Good Karma - Native Turbo'
 PATCH_SET = 'Good Karma - SET Screen'
 PATCH_PREY = 'Good Karma - Prey Eyes'
 PATCH_BB = 'Good Karma - BattleButtons'
+PATCH_SK = 'Good Karma - SubtleKarma'
+PATCH_SUN = 'Good Karma - SunKing'
+PATCH_WT = 'Good Karma - WordTripper'
 ATLAS_ADDR = 0x000A0000
 
 def build(include_test=False):
@@ -196,6 +199,18 @@ def build(include_test=False):
     lines.append('patch=1,EE,000FD204,word,00000001')            # FEATURES[1]: BattleButtons on
     hook(lines, 0x001BF134, syms['bb_command_hook'], 'command panel pre-input')
     hook(lines, 0x001C13A0, syms['bb_target_input'], 'target panel input (shared)')
+    # ---- field toggles ----
+    for name, flag, desc in ((PATCH_SK, 0x000FD208, 'Field: d-pad UP toggles random encounters on/off (with sound and message).'),
+                             (PATCH_SUN, 0x000FD20C, 'Field: d-pad DOWN switches solar noise between MAX and MIN.')):
+        lines += ['', '[%s]' % name, 'author=Good Karma v%s' % VERSION, 'description=' + desc]
+        blob(lines)
+        lines.append('patch=1,EE,%08X,word,00000001' % flag)
+        hook(lines, 0x00125980, syms['field_hook'], 'field player-control step')
+    # ---- WordTripper: every glyph starts fading in at once (0x1955d8 reveal gate forced open) ----
+    lines += ['', '[%s]' % PATCH_WT, 'author=Good Karma v%s' % VERSION,
+              'description=Text appears all at once, fading in together instead of letter by letter.']
+    lines.append('patch=1,EE,00195664,word,00000000')   # no per-line wait (bne v1,v0)
+    lines.append('patch=1,EE,0019566C,word,0000102D')   # previous-glyph alpha check -> always pass
     build.syms = syms
     return '\n'.join(lines) + '\n', words
 

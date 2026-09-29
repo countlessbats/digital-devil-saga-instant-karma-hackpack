@@ -1,7 +1,7 @@
 # Good Karma
 
 Quality-of-life mods for **Shin Megami Tensei: Digital Devil Saga** (USA, SLUS-20974) on PCSX2 2.x.
-All four mods live in one patch file and can be switched on or off independently in PCSX2.
+All the mods live in one patch file and can be switched on or off independently in PCSX2.
 
 ## Mods
 
@@ -29,11 +29,20 @@ A redesigned skill SET screen:
 Battle information, adapted from the Prey Eyes 2 mod for SMT III Nocturne HD:
 - **Reticle result:** while targeting, the centre of the reticle shows what the selected skill will do to that enemy and pulses with it: green **!** weak, red icons for null, reflect and drain, a split shield for resist, the game's own ring in white for a normal hit, and a white **?** when you don't know yet. Support skills leave the reticle unchanged.
 - **Affinity board:** above the targeted enemy's name: all nine elements (Phys, Gun, Fire, Ice, Elec, Force, Earth, Expel, Death) with their results, and above them the ailments (Charm, Poison, Mute, Panic, Sleep) the enemy resists, blocks or is weak to. Ailments it takes normally are left out. This row is the enemy's resistance, not its current status.
-- **Buffs and debuffs:** Attack, Magic, Defense and Hit/Evasion levels (-kaja/-nda, up to 4 steps) above each enemy and under each party member's portrait. The help bar moves down slightly to make room.
+- **Buffs and debuffs:** Attack, Magic, Defense and Hit/Evasion levels (-kaja/-nda, up to 4 steps) above each enemy (hidden during attack animations and camera moves) and under each party member's portrait. The help bar moves down slightly to make room.
 - **Knowledge:** affinities start unknown. Using a skill on an enemy teaches that attribute for its species; killing one or using Analyze reveals everything. Knowledge is stored inside your save file, so each save keeps its own.
 
 ### BattleButtons
-In the battle command menu, **R1** passes the turn and **L1** retreats, with no confirmation step.
+In the battle command menu, **R1** passes the turn and **L1** retreats instantly, with no confirmation step. The **right stick** pages the current list up or down by 4 entries.
+
+### SubtleKarma
+On the field, **d-pad UP** toggles random encounters off and on, with a system sound and an on-screen message. Only works while you are walking around (not in menus, battles or scenes).
+
+### SunKing
+On the field, **d-pad DOWN** switches solar noise between MAX and MIN.
+
+### WordTripper
+All text fades in at once instead of letter by letter.
 
 ## Install
 
@@ -48,7 +57,7 @@ Savestates made with a mod on keep that mod's code in memory; after changing whi
 With Python 3 from the repository:
 ```
 python tools/install.py "<PCSX2 data folder>"              # all mods
-python tools/install.py "<PCSX2 data folder>" --no-turbo   # skip a mod: --no-turbo / --no-set / --no-prey / --no-buttons
+python tools/install.py "<PCSX2 data folder>" --no-turbo   # skip a mod: --no-turbo / --no-set / --no-prey / --no-buttons / --no-subtle / --no-sun / --no-wordtripper
 ```
 This copies the patch file, enables the chosen mods and sets EE Cycle Rate 300% in the game's settings file (other settings are kept).
 

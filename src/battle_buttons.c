@@ -18,7 +18,9 @@ enum { B_X = 1, B_LEFT = 4, B_RIGHT = 5, B_UP = 6, B_L1 = 8, B_R1 = 10 };
 static int st, goal, timer, steps;
 static u32 confirm_at;             /* logic frame of our X press; the next target step within 90 frames is auto-confirmed */
 #define FRAME RD32(0x003ba700u)
-enum { IDLE, NAV, UP, PRESS };
+enum { IDLE, NAV, UP, PRESS, PAGE };
+static int page_dir, page_left, page_prev, stick_prev;
+#define RAW_RSTICK_V RD8(0x003f9b11u)   /* raw pad: +0x10 right h, +0x11 right v (0x80 = centre) */
 
 static void press(int b, u8 bits) { RD8(PAD + b) = bits; }
 
@@ -37,6 +39,24 @@ void bb_command_hook(void)
     u32 w = command_work();
     if (!w || RD32(w) != 2) { st = IDLE; return; }          /* 2 = waiting for a command */
     u8 l1 = RD8(PAD + B_L1), r1 = RD8(PAD + B_R1);
+    press(B_L1, 0); press(B_R1, 0);                         /* L1/R1 are ours in this menu */
+    /* right stick: page up/down 4 entries (edge-triggered, stick must return to centre) */
+    int rv = RAW_RSTICK_V, sdir = rv > 0xc0 ? 1 : rv < 0x40 ? -1 : 0;
+    if (st == IDLE && sdir && !stick_prev) { st = PAGE; page_dir = sdir; page_left = 4; timer = 0; }
+    stick_prev = sdir;
+    if (st == PAGE) {
+        if (timer > 0) { timer--; return; }
+        int cur = *(volatile u16 *)(w + 6);
+        if (page_left < 4 && ((page_dir > 0 && cur < page_prev) || (page_dir < 0 && cur > page_prev))) {
+            press(page_dir > 0 ? B_UP : 7, 0x82);           /* wrapped past the end: step back, stop */
+            st = IDLE; return;
+        }
+        if (page_left-- <= 0) { st = IDLE; return; }
+        page_prev = cur;
+        press(page_dir > 0 ? 7 : B_UP, 0x82);
+        timer = 1;
+        return;
+    }
     if (st == IDLE) {
         if (r1 & 0x80) { st = NAV; goal = TAB_FIGHT; }
         else if (l1 & 0x80) { st = NAV; goal = TAB_ESCAPE; }
@@ -49,6 +69,13 @@ void bb_command_hook(void)
     int tab = tp ? RD8(tp + 1) : -1;
     switch (st) {
     case NAV:
+        if (tab != goal && goal == TAB_ESCAPE && tp) {
+            RD8(tp + 1) = TAB_ESCAPE;                      /* jump straight to ESCAPE and confirm */
+            press(B_X, 0x81);
+            confirm_at = FRAME | 1;
+            st = IDLE;
+            return;
+        }
         if (tab != goal) {
             if (++steps > 8) { st = IDLE; return; }       /* tab not available (e.g. no escape) */
             press(goal == TAB_ESCAPE ? B_LEFT : B_RIGHT, 0x82);

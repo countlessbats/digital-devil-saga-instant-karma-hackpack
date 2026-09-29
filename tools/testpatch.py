@@ -16,6 +16,11 @@ INJ_ASM = """
     addiu $sp, $sp, -0x10
     sd    $ra, 0($sp)
     lui   $8, 0x000F
+    lw    $12, 0x10($8)           # 0xF0010: raw analog override (0 = none)
+    beq   $12, $zero, noan
+    lui   $10, 0x0040
+    sw    $12, -0x64f0($10)       # 0x3f9b10 raw analog bytes
+noan:
     lhu   $9, 0x0c($8)
     lui   $10, 0x0040
     lhu   $11, -0x64fa($10)       # 0x3f9b06 pad0 raw held
@@ -23,9 +28,7 @@ INJ_ASM = """
     or    $11, $11, $9
     jal   0x2e39c8
     sh    $11, -0x64fa($10)
-    lhu   $11, 8($sp)             # restore raw value
-    lui   $10, 0x0040
-    sh    $11, -0x64fa($10)
+    # raw value is left injected for the rest of the frame (field code reads it later)
     ld    $ra, 0($sp)
     jr    $ra
     addiu $sp, $sp, 0x10
