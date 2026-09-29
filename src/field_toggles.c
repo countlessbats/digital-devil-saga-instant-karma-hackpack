@@ -58,13 +58,13 @@ u32 field_hook(void)
 
     if (ok && FEATURES[2] && (edge & BTN_UP)) {
         enc_off ^= 1;
-        f_se(enc_off ? SE_OFF : SE_ON, 0x7f, 0x3f);
+        f_se(enc_off ? SE_ON : SE_OFF, 0x7f, 0x3f);
         show(enc_off ? "Encounters OFF" : "Encounters ON");
     }
     if (ok && FEATURES[3] && (edge & BTN_DOWN)) {
         int full = RD8(GBWK + 0xa41) == 8;
         f_set_phase(full ? 0 : 8);
-        f_se(full ? SE_OFF : SE_ON, 0x7f, 0x3f);
+        f_se(full ? SE_ON : SE_OFF, 0x7f, 0x3f);
     }
     if (FEATURES[2] && enc_off) {
         /* the encounter roll adds walked distance into +0x1360 and bumps the danger counter at

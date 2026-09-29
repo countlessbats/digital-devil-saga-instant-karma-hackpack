@@ -39,8 +39,9 @@ typedef struct {
     int debug_all_known;
     int head_axis;
     int debug_attr;                     /* test: 1 + attr forces the attribute used for the reticle */
+    int head_bone;                      /* model anchor for the overhead row (2 = the game's HP/MP popup point) */
 } Prey;
-#define PREY_MAGIC 0x5052450a
+#define PREY_MAGIC 0x5052450c
 #define PR ((volatile Prey *)0x000FD000)
 
 static void prey_defaults(void)
@@ -53,10 +54,10 @@ static void prey_defaults(void)
     p->board_y = 254; p->res_dy = 144;
     p->ail_y = 110; p->ail_size = 15; p->ail_gap = 1;
     p->ebuf_pitch = 0x110; p->ebuf_size = 16;
-    p->head_lift = 210; p->head_dy = 0;
+    p->head_lift = 55; p->head_dy = 0; p->head_bone = 0;
     p->pbuf_dx = 0x1c0; p->pbuf_dy = 616; p->pbuf_pitch = 0xf0; p->pbuf_size = 14;
     p->help_y = 410;
-    p->debug_all_known = 0; p->debug_attr = 0; p->head_axis = 2;
+    p->debug_all_known = 0; p->debug_attr = 0; p->head_axis = 1;
     p->magic = PREY_MAGIC;
 }
 
@@ -216,7 +217,7 @@ static const int result_spr_res[8] = { -1, SPR_RES_UNKNOWN, SPR_RES_WEAK, SPR_RE
 static u32 result_tint(int r)
 {
     if (r == R_WEAK) return rgba(0x30, 0x80, 0x30, 0x80);
-    if (r >= R_RESIST) return rgba(0x80, 0x20, 0x20, 0x80);
+    if (r > R_RESIST) return rgba(0x80, 0x20, 0x20, 0x80);
     return rgba(0x80, 0x80, 0x80, 0x80);
 }
 
@@ -303,12 +304,14 @@ void prey_ring(int x, int y, int z, u32 *cols, int flags, u32 sh, int spr, int p
             int cx = x + gw / 2, cy = y + gh / 2;
             int s = r == R_UNKNOWN ? PR->ret_unknown : PR->ret_size;
             int sw = s * 16 * gw / 0x1f0, shh = s * 8 * gw / 0x1f0;   /* scale with the pulse */
-            u32 t = result_tint(r);
+            /* resist: the board's full-colour shield; the rest are white glyphs tinted */
+            int spr = r == R_RESIST ? SPR_RES_RESIST : result_spr_ret[r];
+            u32 t = r == R_RESIST ? rgba(0x80, 0x80, 0x80, 0x80) : result_tint(r);
             u32 c2[4];
             for (int k = 0; k < 4; k++) c2[k] = mulc(cols[k], t);
-            u8 *d = defs[result_spr_ret[r]];
+            u8 *d = defs[spr];
             W32(d, 0x0c) = sw; W32(d, 0x10) = shh;
-            f_draw_c(cx - sw / 2, cy - shh / 2, z, c2, 0, prey_sheet(), result_spr_ret[r], prio);
+            f_draw_c(cx - sw / 2, cy - shh / 2, z, c2, 0, prey_sheet(), spr, prio);
             return;
         }
     }
@@ -361,11 +364,11 @@ static void draw_board(u32 u)
         int spr = result_spr_res[result(u, board_attrs[i])];
         if (spr >= 0) icon(spr, x + (p->elem_size - p->res_size) * 8, p->board_y + p->res_dy, p->res_size, white);
     }
-    /* ailments: only those that are not a plain hit (unknown ones show ?), centred */
+    /* ailments: only known, non-neutral results, centred */
     int show[5], n = 0;
     for (int i = 0; i < 5; i++) {
         int r = result(u, ail_attrs[i]);
-        if (r != R_NORMAL && r != R_NONE) show[n++] = i;
+        if (r != R_NORMAL && r != R_NONE && r != R_UNKNOWN) show[n++] = i;
     }
     int gw = (p->ail_size * 2) * 16, pitch = gw + p->ail_gap * 16;
     int ax = 4096 - (n * pitch - p->ail_gap * 16) / 2;
@@ -396,17 +399,16 @@ static float vbuf[4] __attribute__((aligned(16)));
  * position plus a fixed height, so it neither bobs with the idle animation nor drifts with
  * distance. The height is the bone-0 (upper body) height above the root, measured once per
  * unit, scaled by head_lift/100 plus head_dy world units. */
-static u32 hp_unit[16];
+static u32 hp_unit[16], hp_bone[16];
 static float hp_h[16];
-static int hp_lx[16], hp_ly[16], hp_still[16];
-static float rootv[4] __attribute__((aligned(16)));
 
 static int head_pos(int slot, u32 u, int *sx, int *sy)
 {
-    if (hp_unit[slot] != u) {
-        hp_unit[slot] = u; hp_h[slot] = 0.0f;
-        f_unit_pos(u); vf10_save(rootv);
-        if (f_unit_anchor(u, 0)) { vf10_save(vbuf); hp_h[slot] = vbuf[PR->head_axis] - rootv[PR->head_axis]; }
+    u32 bone = (u32)PR->head_bone;
+    if (hp_unit[slot] != u || hp_bone[slot] != bone) {
+        hp_unit[slot] = u; hp_bone[slot] = bone;
+        /* the unit's own height (the game's HP/MP popup uses it too): +0xb0 height x +0x80 scale */
+        hp_h[slot] = -(*(volatile float *)(u + 0xb0) * *(volatile float *)(u + 0x80));
     }
     f_unit_pos(u);
     vf10_save(vbuf);
@@ -418,28 +420,50 @@ static int head_pos(int slot, u32 u, int *sx, int *sy)
     return 1;
 }
 
+/* Set when an action queues a real buff/debuff change (0x1d3400 schedules the event that applies
+ * it mid-animation; its mask at +0x10 is 0 for hits that change nothing). Player actions queue it
+ * as they start, enemy actions just before, so it covers the current or next action and is
+ * cleared when that action ends. */
+static int buff_pending;
+#define f_buff_event ((u32 (*)(u32, u32))0x001d3400)
+u32 prey_buff_event(u32 unit, u32 ev)
+{
+    if (RD32(ev + 0x10)) buff_pending = 1;
+    return f_buff_event(unit, ev);
+}
+
 static void draw_enemy_buffs(void)
 {
     volatile Prey *p = PR;
     u32 b = BATTLE;
     if (!b || !prey_sheet()) return;
-    /* only while the player is choosing (command or target panel up); animations change the camera */
-    if (!f_task_by_id(0x3a1ec8u) && !f_task_by_id(0x3a1eb0u)) return;   /* "btl_panel_command" / "btl_panel_target" */
-    int n = 0;
+    /* battle+0x164 -> +0: battle phase (6 waiting for a command), +0x24: skill of the action
+     * resolving (0xffffffff for none, e.g. Pass). Hidden only while an action resolves, unless
+     * that action changes buffs; Pass and turn handoffs keep them up. */
+    u32 rec = RD32(b + 0x164);
+    int phase = rec ? (int)RD32(rec) : 0;
+    int panel = f_task_by_id(0x3a1ec8u) || f_task_by_id(0x3a1eb0u);   /* "btl_panel_command" / "btl_panel_target" */
+    static int prev_exec;
+    int exec = rec && phase != 6 && RD32(rec + 0x24) != 0xffffffffu;   /* a skill/attack is resolving */
+    if ((prev_exec && !exec) || panel) buff_pending = 0;      /* that action is over */
+    prev_exec = exec;
+    if (exec && !buff_pending) return;
+    int n = 0, pos[16][2], ok[16];
     for (u32 u = RD32(b + 0x228); u && n < 16; u = RD32(u + 0x344), n++) {
+        ok[n] = 0;
         if (!is_enemy(u) || *(volatile u16 *)(u + 0x126) == 0 || !(RD32(u + 0x110) & 1)) continue;
+        int sx, sy;
+        if (!head_pos(n, u, &sx, &sy)) continue;
+        pos[n][0] = sx; pos[n][1] = sy; ok[n] = 1;
+    }
+    n = 0;
+    for (u32 u = RD32(b + 0x228); u && n < 16; u = RD32(u + 0x344), n++) {
+        if (!ok[n]) continue;
         int cnt = 0;
         for (int k = 0; k < 4; k++) if (buff_level(u, k)) cnt++;
         if (!cnt) continue;
-        int sx, sy;
-        if (!head_pos(n, u, &sx, &sy)) { hp_still[n] = 0; continue; }
-        /* camera cuts and pans move the projection: only draw once it has held still */
-        int dx = sx - hp_lx[n], dy = sy - hp_ly[n];
-        hp_lx[n] = sx; hp_ly[n] = sy;
-        if (dx * dx + dy * dy > 4) { hp_still[n] = 0; continue; }
-        if (hp_still[n] < 10) { hp_still[n]++; continue; }
         int w = (cnt - 1) * p->ebuf_pitch + p->ebuf_size * 16;
-        draw_buffs(u, sx * 16 - w / 2, sy * 8 - p->ebuf_size * 8, p->ebuf_pitch, p->ebuf_size);
+        draw_buffs(u, pos[n][0] * 16 - w / 2, pos[n][1] * 8 - p->ebuf_size * 8, p->ebuf_pitch, p->ebuf_size);
     }
 }
 

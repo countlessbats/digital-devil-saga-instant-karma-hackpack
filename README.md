@@ -28,12 +28,12 @@ A redesigned skill SET screen:
 ### Prey Eyes
 Battle information, adapted from the Prey Eyes 2 mod for SMT III Nocturne HD:
 - **Reticle result:** while targeting, the centre of the reticle shows what the selected skill will do to that enemy and pulses with it: green **!** weak, red icons for null, reflect and drain, a split shield for resist, the game's own ring in white for a normal hit, and a white **?** when you don't know yet. Support skills leave the reticle unchanged.
-- **Affinity board:** above the targeted enemy's name: all nine elements (Phys, Gun, Fire, Ice, Elec, Force, Earth, Expel, Death) with their results, and above them the ailments (Charm, Poison, Mute, Panic, Sleep) the enemy resists, blocks or is weak to. Ailments it takes normally are left out. This row is the enemy's resistance, not its current status.
-- **Buffs and debuffs:** Attack, Magic, Defense and Hit/Evasion levels (-kaja/-nda, up to 4 steps) above each enemy (hidden during attack animations and camera moves) and under each party member's portrait. The help bar moves down slightly to make room.
+- **Affinity board:** above the targeted enemy's name: all nine elements (Phys, Gun, Fire, Ice, Elec, Force, Earth, Expel, Death) with their results, and above them the ailments (Charm, Poison, Mute, Panic, Sleep) you know the enemy resists, blocks or is weak to. Unknown and normal ones are left out. This row is the enemy's resistance, not its current status.
+- **Buffs and debuffs:** Attack, Magic, Defense and Hit/Evasion levels (-kaja/-nda, up to 4 steps) above each enemy's head (hidden while an attack plays, unless that attack changes buffs) and under each party member's portrait. The help bar moves down slightly to make room.
 - **Knowledge:** affinities start unknown. Using a skill on an enemy teaches that attribute for its species; killing one or using Analyze reveals everything. Knowledge is stored inside your save file, so each save keeps its own.
 
 ### BattleButtons
-In the battle command menu, **R1** passes the turn and **L1** retreats instantly, with no confirmation step. The **right stick** pages the current list up or down by 4 entries.
+In the battle command menu, **R1** passes the turn and **L1** retreats, both instantly with no menu. The **right stick** jumps the current list up or down by 4 entries.
 
 ### SubtleKarma
 On the field, **d-pad UP** toggles random encounters off and on, with a system sound and an on-screen message. Only works while you are walking around (not in menus, battles or scenes).

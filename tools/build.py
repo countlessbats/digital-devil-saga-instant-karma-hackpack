@@ -189,12 +189,14 @@ def build(include_test=False):
     hook(lines, 0x001C00EC, syms['prey_ring'], 'reticle ring sprite draw')
     hook(lines, 0x001B6E84, syms['prey_party_panel'], 'party panel per-member draw')
     hook(lines, 0x001A1158, syms['prey_battle_exit'], 'btlExit teardown call')
+    hook(lines, 0x001CC320, syms['prey_buff_event'], 'buff change queued (skill result)')
+    hook(lines, 0x001CD868, syms['prey_buff_event'], 'buff change queued (item/other result)')
     lines.append('patch=1,EE,000FD200,word,00000001')            # FEATURES[0]: Prey Eyes on
     hook(lines, 0x001C13A0, syms['bb_target_input'], 'target panel input (shared)')
     # ---- BattleButtons ----
     lines += ['', '[%s]' % PATCH_BB,
               'author=Good Karma v%s' % VERSION,
-              'description=Battle command menu: R1 passes the turn and L1 retreats, with no confirmation.']
+              'description=Battle command menu: R1 passes and L1 retreats instantly; the right stick jumps a page.']
     blob(lines)
     lines.append('patch=1,EE,000FD204,word,00000001')            # FEATURES[1]: BattleButtons on
     hook(lines, 0x001BF134, syms['bb_command_hook'], 'command panel pre-input')
