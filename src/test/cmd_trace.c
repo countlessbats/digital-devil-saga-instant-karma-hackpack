@@ -9,6 +9,10 @@ u32 trace_cmd(u32 ctx)
     short id = *(volatile short *)(RD32(ctx + 0xbc) + pc * 4 + 2);
     u32 res = f_cmd(ctx);
     u32 n = r[0];
+    if (n) {                                   /* collapse repeats of the same waiting command */
+        u32 j = (n - 1) % 80;
+        if ((r[1 + j * 3] & 0xffff) == (u32)(u16)id && r[2 + j * 3] == pc) { r[1 + j * 3] = (u32)(u16)id | (res << 16); return res; }
+    }
     u32 i = n % 80;
     r[1 + i * 3] = (u32)(u16)id | (res << 16);
     r[2 + i * 3] = pc;

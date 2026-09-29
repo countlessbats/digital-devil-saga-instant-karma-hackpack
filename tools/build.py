@@ -255,6 +255,7 @@ def build(include_test=False):
     lines.append('patch=1,EE,000FD21C,word,00000001')            # FEATURES[7]: OpenChests on
     lines.append('patch=1,EE,0039E288,word,%08X' % syms['chest_cmd_msg'])      # script command 0 (MSG)
     lines.append('patch=1,EE,0039E2A0,word,%08X' % syms['chest_cmd_select'])   # script command 3 (SELECT)
+    lines.append('patch=1,EE,0039E2F8,word,%08X' % syms['chest_cmd_wait'])     # script command 0xe (WAIT)
     # ---- WordTripper: every glyph starts fading in at once (0x1955d8 reveal gate forced open) ----
     lines += ['', '[%s]' % PATCH_WT, 'author=Good Karma v%s' % VERSION,
               'description=Text appears all at once, fading in together instead of letter by letter.']

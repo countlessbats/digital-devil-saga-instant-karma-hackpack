@@ -58,7 +58,7 @@ While the logos or the intro movie are playing:
 Press **START** during a cutscene to skip it, including scenes the game normally refuses to skip ("This event cannot be skipped."). One press carries on through scenes that follow straight after, until you have control again. The scene's script still runs to the end (fast-forwarded when Native Turbo is on), so story state is exactly as if you had watched it.
 
 ### OpenChests
-Inspecting a chest (or a floating jewel) opens it straight away: the "A strange object lies on the floor. Touch it?" question and its Yes/No are answered inside the game's own chest script, so they never appear. The "Obtained ..." message stays so you see what you got.
+Inspecting a chest (or a floating jewel) opens it straight away: the "A strange object lies on the floor. Touch it?" question and its Yes/No are answered inside the game's own chest script, so they never appear, and the script's pause for the lid animation is skipped: "Obtained ..." comes up straight away and clears like any other message.
 
 ### WordTripper
 All text fades in at once instead of letter by letter.
