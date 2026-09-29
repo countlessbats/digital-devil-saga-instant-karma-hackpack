@@ -15,6 +15,7 @@ VERSION = open(os.path.join(ROOT, 'VERSION')).read().strip()
 # edges fire once, then runs the normal pass that submits the frame.
 # Each skipped pass restores the packet-buffer index (0x3bd2ea) so all passes
 # build into the buffer the render thread is not holding.
+# Turbo is off (and L3/R3 toggles ignored) while the camp menu is open.
 TURBO_VARS = 0x000F0000   # +0 toggle mult, +1 debug override, +2 prev held, +4 last N, +8 extra passes
 TURBO_CODE = 0x000F0020
 HOOK_SITE = 0x001006AC    # jal 0x101540 inside main loop
@@ -30,6 +31,10 @@ TURBO_ASM = """
     lhu   $8, -0x2c60($8)       # 0x3bd3a0 pad0 held (active high)
     lhu   $9, 2($s1)
     sh    $8, 2($s1)
+    lui   $12, 0x003C
+    lbu   $12, -0x394c($12)       # 0x3bc6b4 camp menu state (0 closed, 1 open, 2 closing)
+    bne   $12, $zero, in_menu     # menu: 1x, toggles ignored
+    nop
     xor   $10, $8, $9
     and   $10, $10, $8           # newly pressed
     lbu   $11, 0($s1)             # toggle multiplier (0 = off)
@@ -70,6 +75,7 @@ no_r2:
 no_ovr:
     bgtz  $s0, n_ok
     nop
+in_menu:
     addiu $s0, $zero, 1
 n_ok:
     sb    $s0, 4($s1)
@@ -131,7 +137,7 @@ def jal(target):
 def build():
     lines = ['gametitle=Shin Megami Tensei: Digital Devil Saga (USA) [SLUS-20974] (D7273511)',
              'comment=DDS1 mods v%s' % VERSION, '',
-             '// Native turbo: hold L2 = 3x, hold R2 = 6x, L3/R3 toggle 3x/6x']
+             '// Native turbo: hold L2 = 3x, hold R2 = 6x, L3/R3 toggle 3x/6x (off in main menu)']
     words = asm(TURBO_ASM, TURBO_CODE)
     for i, w in enumerate(words):
         lines.append('patch=1,EE,%08X,word,%08X' % (TURBO_CODE + 4 * i, w))

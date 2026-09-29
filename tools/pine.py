@@ -27,3 +27,5 @@ class Pine:
     def title(self):
         d = self._cmd(b'\x0b', 256); n = struct.unpack('<I', d[:4])[0]; return d[4:4 + n].rstrip(b'\0').decode()
     def load_state(self, slot): self._cmd(struct.pack('<BB', 0x0a, slot), 0)
+
+    def save_state(self, slot): self._cmd(struct.pack('<BB', 0x09, slot), 0)
