@@ -41,9 +41,10 @@ typedef struct {
     u32 box_fill;                       /* translucent panel fill inside the box (0xRRGGBBAA, 0 = none) */
     int cat_crop_top, cat_crop_right;   /* trim the category pane backdrop (screen units) */
     int cat_crop_left;
+    int cat_label_dy;                   /* lower the category name label (and its ! marker) */
 } Layout;
 
-#define LAY_MAGIC 0x4c415918
+#define LAY_MAGIC 0x4c415919
 #define LAY ((volatile Layout *)0x000FF000)
 
 /* game functions */
@@ -116,24 +117,24 @@ static void layout_defaults(void)
     if (l->magic == LAY_MAGIC) return;
     /* ASSIGNED top-left, HELP top-right, status under HELP, tabs under ASSIGNED,
      * LEARNED as a 3x8 grid across the full width (px ~ units/12.8 across, /7.47 down) */
-    l->asg_x = 64;    l->asg_y = 187;  l->asg_rowh = 0x98;
+    l->asg_x = 64;    l->asg_y = 209;  l->asg_rowh = 0x98;
     l->help_dx = 4416; l->help_dy = -2442;
     l->port_dx = 120;  l->port_dy = 709;
     l->cat_x = -608;   l->cat_y = 1438;
     l->grid_x = 0;     l->grid_y = 1986; l->grid_pitch = 2662;
     l->grid_cols = 3;  l->grid_rows = 8;  l->grid_rowh = 0;
-    l->sort_x = 5786;  l->sort_y = 1747;
+    l->sort_x = 4941;  l->sort_y = 1838;
     l->strip_w = 0;
     l->decor = 0;      l->hide_header = 1;
     l->lbl_x = -192;   l->lbl_y = 2524;
     l->name_dx = 0x60; l->cost_dx = 0x863;
-    l->bang_x = 4186;  l->bang_y = 1889;
+    l->bang_x = 3379;  l->bang_y = 2002;
     l->skip = 0;
     l->unit_dx = -72; l->unit_dy = 0;
     l->hint_probe = 0;
     l->h_y = 3372; l->h_text_y = 3372;
     l->h_start_x = 422; l->h_tri_x = 2035; l->h_l1_x = 3840; l->h_x_x = 5709; l->h_o_x = 6848;
-    l->h_type_x = 2624; l->h_type_y = 1590;
+    l->h_type_x = 2624; l->h_type_y = 1568;
     l->h_color = 0xa09dc340;
     l->frames = 0;
     l->div_color = 0x44445a80; l->div_dx = 88; l->div_w = 16;
@@ -143,7 +144,7 @@ static void layout_defaults(void)
     l->mark_dx = -0xb0; l->mark_dy = -0x38;
     l->arrow_dx = 0; l->row_lines = 1; l->row_line_dy = -16;
     l->box_fill = 0x00000030;
-    l->cat_crop_top = 130; l->cat_crop_right = 742; l->cat_crop_left = 666;
+    l->cat_crop_top = 20; l->cat_crop_right = 742; l->cat_crop_left = 666; l->cat_label_dy = 15;
     l->magic = LAY_MAGIC;
 }
 
@@ -411,7 +412,7 @@ static void place_tab_marks(int dx, int dy)
 static void draw_learned_side(u32 wa, u32 s1, u32 tab)
 {
     volatile Layout *l = LAY;
-    place_tab_marks(l->cat_x - 0xde0, l->cat_y - 0x350);
+    place_tab_marks(l->cat_x - 0xde0, l->cat_y - 0x350 + l->cat_label_dy);
     u32 W = RD32(s1 + 0x10 + tab * 4);
     if (l->decor) {
         f_sprite(0x10e0, 0x598, 0, 1, RD32(wa + 0xe8), 9, PRIO);
@@ -438,7 +439,10 @@ static void draw_learned_side(u32 wa, u32 s1, u32 tab)
             RD32(cd + 4) = cs[5] + (u32)l->cat_crop_left;
             RD32(cd + 0x50) = cs[6] + (u32)(us * l->cat_crop_left / w);
         }
+        u32 s54 = RD32(to + 0x54);
+        RD32(to + 0x54) = s54 + (u32)l->cat_label_dy;
         f_tabrow(l->cat_x, l->cat_y, 0, to, PRIO);
+        RD32(to + 0x54) = s54;
         if (cd) { RD32(cd + 8) = cs[0]; RD32(cd + 0xc) = cs[1]; RD32(cd + 0x10) = cs[2]; RD32(cd + 0x54) = cs[3]; RD32(cd + 0x58) = cs[4]; RD32(cd + 4) = cs[5]; RD32(cd + 0x50) = cs[6]; }
     }
     if (l->grid_cols <= 1 && !l->grid_rowh) f_widget(l->grid_x, l->grid_y, 0, W, PRIO);

@@ -116,6 +116,6 @@ int set_logic(int a0, int a1, int a2, int a3, int a4, int a5, int a6, int a7)
 
 const char *sort_label(void)
 {
-    static const char *const labels[MODES] = { "Sort: Game", "Sort: Cost", "Sort: A-Z" };
+    static const char *const labels[MODES] = { "Sort:Game", "Sort:Cost", "Sort:A-Z" };
     return labels[sort_mode];
 }
