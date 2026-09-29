@@ -6,7 +6,7 @@ import drive
 from drive import p, wait_vbl
 FIELDS = ['magic', 'asg_x', 'asg_y', 'asg_rowh', 'help_dx', 'help_dy', 'port_dx', 'port_dy', 'cat_x', 'cat_y',
           'grid_x', 'grid_y', 'grid_pitch', 'grid_cols', 'grid_rows', 'grid_rowh', 'sort_x', 'sort_y',
-          'strip_w', 'decor', 'hide_header', 'lbl_x', 'lbl_y', 'name_dx', 'cost_dx', 'bang_x', 'bang_y', 'skip', 'unit_dx', 'unit_dy', 'hint_probe', 'h_y', 'h_text_y', 'h_start_x', 'h_type_x', 'h_tri_x', 'h_l1_x', 'h_x_x', 'h_o_x', 'h_color', 'h_type_y', 'nudge_on']
+          'strip_w', 'decor', 'hide_header', 'lbl_x', 'lbl_y', 'name_dx', 'cost_dx', 'bang_x', 'bang_y', 'skip', 'unit_dx', 'unit_dy', 'hint_probe', 'h_y', 'h_text_y', 'h_start_x', 'h_type_x', 'h_tri_x', 'h_l1_x', 'h_x_x', 'h_o_x', 'h_color', 'h_type_y', 'nudge_on', 'frames', 'div_color', 'div_dx', 'div_w', 'undo_keep', 'undo_lx', 'undo_x', 'undo_rx']
 BASE = 0xFF000
 def get(): return {f: (lambda v: v - (1 << 32) if v >= 1 << 31 else v)(p.r32(BASE + 4 * i)) for i, f in enumerate(FIELDS)}
 if __name__ == '__main__':

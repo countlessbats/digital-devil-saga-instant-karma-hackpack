@@ -28,9 +28,14 @@ typedef struct {
     u32 h_color;                        /* hint text colour (pointer into the game's colour table) */
     int h_type_y;                       /* "L2/R2" label beside the tab row: h_type_x, h_type_y */
     int nudge_on;                       /* set by tools/nudge.py while NumLock move mode is active */
+    int frames;                         /* draw the game's per-row strips for each column (1) or not (0) */
+    u32 div_color;                      /* column divider colour (0xAABBGGRR, 0 = none) */
+    int div_dx, div_w;                  /* divider x offset from each column start, and width */
+    int undo_keep;                      /* texels kept of the 64-texel dash sprite (6 dashes) */
+    int undo_lx, undo_x, undo_rx;       /* Undo row: left dashes, "Undo", right dashes (cell-relative) */
 } Layout;
 
-#define LAY_MAGIC 0x4c415910
+#define LAY_MAGIC 0x4c415911
 #define LAY ((volatile Layout *)0x000FF000)
 
 /* game functions */
@@ -50,6 +55,7 @@ typedef struct {
 #define f_prompt     ((void (*)(int))0x00272350)
 #define f_hints      ((void (*)(int, u32))0x002723b0)
 #define f_component  ((u32 (*)(u32, u32, int, u32))0x00285670)
+#define f_sprdef     ((u32 (*)(u32, int))0x002bd398)   /* (sheet, index) -> sprite definition */
 #define f_helptext   ((u32 (*)(int, int, int, int, u32, int))0x00197c40)
 #define f_textcolor  ((void (*)(u32, u32))0x001954c8)
 #define f_textprep   ((void (*)(u32, int, int))0x001958a0)
@@ -106,6 +112,9 @@ static void layout_defaults(void)
     l->h_start_x = 422; l->h_tri_x = 2035; l->h_l1_x = 3840; l->h_x_x = 5709; l->h_o_x = 6848;
     l->h_type_x = 2624; l->h_type_y = 1590;
     l->h_color = 0xa09dc340;
+    l->frames = 0;
+    l->div_color = 0x40a0a0a0; l->div_dx = -40; l->div_w = 16;
+    l->undo_keep = 53; l->undo_lx = 152; l->undo_x = 1064; l->undo_rx = 1816;
     l->magic = LAY_MAGIC;
 }
 
@@ -137,6 +146,20 @@ void costfn_prepare(void)
 /* The LEARNED row callback (0x277df8, used only by LEARNED lists) places the cost block at
  * cell x + 0x930 via "addiu a0, s5, 0x930" at 0x277fe4. Rewrite the immediate when it changes. */
 #define COST_INSN 0x00277fe4u
+/* Undo row pieces in the same callback: left dashes "addiu a0,s5,0xa0" (0x277f54),
+ * "Undo" "addiu s3,s5,0x4e0" (0x277f20), right dashes "addiu a0,s5,0x7e0" (0x277f70). */
+static void patch_imm(u32 addr, u32 base, int v)
+{
+    u32 want = base | ((u32)v & 0xffff);
+    if (RD32(addr) != want) RD32(addr) = want;
+}
+static void set_undo_offsets(int lx, int x, int rx)
+{
+    patch_imm(0x00277f54u, 0x26a40000u, lx);
+    patch_imm(0x00277f20u, 0x26b30000u, x);
+    patch_imm(0x00277f70u, 0x26a40000u, rx);
+}
+
 static void set_cost_offset(int dx)
 {
     u32 want = 0x26a40000u | ((u32)dx & 0xffff);
@@ -228,6 +251,16 @@ static void draw_grid(u32 W)
     }
     set_cost_offset(l->cost_dx);
     costfn_prepare();
+    set_undo_offsets(l->undo_lx, l->undo_x, l->undo_rx);
+    /* crop the Undo dash sprites (sheet work+0x68, 9 = selected, 10 = normal) to undo_keep texels */
+    u32 dsheet = RD32(RD32(L + 0x30) + 0x68);
+    u32 dd[2]; u32 dw[2], du[2];
+    for (int k = 0; k < 2; k++) {
+        dd[k] = f_sprdef(dsheet, 9 + k);
+        dw[k] = RD32(dd[k] + 0xc); du[k] = RD32(dd[k] + 0x58);
+        RD32(dd[k] + 0xc) = (u32)l->undo_keep * 16;
+        RD32(dd[k] + 0x58) = (u32)(l->undo_keep - 64);
+    }
     if (l->nudge_on) {
         static char buf[32];
         int k = 0;
@@ -253,9 +286,15 @@ static void draw_grid(u32 W)
         RD32(L + 0x18) = first < n ? cells[first] : cells[0];
         if (c == ccol) { RD32(L + 0x24) = crow - grid_top; RD32(L) = s_flags & ~8u; }
         else           { RD32(L + 0x24) = 0; RD32(L) = s_flags | 8u; }
-        f_frame(x, l->grid_y, 0, W, PRIO);
+        if (l->frames) f_frame(x, l->grid_y, 0, W, PRIO);
     }
     RD32(L) = s_flags;
+
+    /* fine divider lines between columns */
+    if (l->div_color)
+        for (int c = 1; c < cols; c++)
+            f_fillquad(l->grid_x + c * l->grid_pitch + l->div_dx, l->grid_y, 0, l->div_w, rows * rowh,
+                       (int)l->div_color, PRIO);
 
     /* cursor highlight in the cursor's column */
     if (s_cnt) {
@@ -279,6 +318,7 @@ static void draw_grid(u32 W)
     }
 
     RD32(L + 0x38) = s_mark;
+    for (int k = 0; k < 2; k++) { RD32(dd[k] + 0xc) = dw[k]; RD32(dd[k] + 0x58) = du[k]; }
     RD32(L + 0x18) = s_top; RD32(L + 0x0c) = s_rows; RD32(L + 0x24) = s_crow; RD32(L + 0x28) = s_rowh;
     if ((int)RD32(W + 0x88) < 0x100) RD32(W + 0x88) = RD32(W + 0x88) + 0x20;
     RD32(W + 4) |= 4;
