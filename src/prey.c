@@ -39,7 +39,7 @@ typedef struct {
     int debug_all_known;
     int debug_attr;                     /* test: 1 + attr forces the attribute used for the reticle */
 } Prey;
-#define PREY_MAGIC 0x50524507
+#define PREY_MAGIC 0x50524508
 #define PR ((volatile Prey *)0x000FD000)
 
 static void prey_defaults(void)
@@ -54,7 +54,7 @@ static void prey_defaults(void)
     p->ebuf_pitch = 0x110; p->ebuf_size = 16;
     p->head_lift = 0; p->head_dy = -0x1e0;
     p->pbuf_dx = 0x1c0; p->pbuf_dy = 616; p->pbuf_pitch = 0xf0; p->pbuf_size = 14;
-    p->help_y = 413;
+    p->help_y = 410;
     p->debug_all_known = 0; p->debug_attr = 0;
     p->magic = PREY_MAGIC;
 }
