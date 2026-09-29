@@ -50,3 +50,6 @@ Delete `patches\SLUS-20974_D7273511.pnach`, or untick the mods in **Properties â
 - `tools/build.py` assembles the turbo hook (keystone) and compiles `src/*.c` with Zig (`zig cc`, MIPS III n32) into `build/SLUS-20974_D7273511.pnach`.
 - Requirements: Python 3 with `keystone-engine`, `pyelftools`, `capstone`; Zig 0.16 (path set in `tools/cbuild.py`).
 - `PLAN.md` documents the reverse-engineered game structures and addresses.
+
+## License
+MIT. See `LICENSE`. This repository contains no game data; you need your own copy of the game.
