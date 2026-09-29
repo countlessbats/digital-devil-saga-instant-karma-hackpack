@@ -15,7 +15,6 @@ enum { B_X = 1, B_L1 = 8, B_R1 = 10 };
 #define f_list_count ((int (*)(u32, int, int))0x001bd190)    /* entries in the tab's list */
 #define f_cmd_commit ((void (*)(u32, int, int, int))0x001b0d70)
 #define f_menu_se    ((void (*)(int))0x001f3238)             /* 0 move, 8 confirm, 10 buzzer */
-#define f_unit_state ((u32 (*)(u32))0x001a1938)
 #define f_kind4_exit ((void (*)(u32, int, int))0x001b83d8)
 
 static u32 confirm_at;             /* logic frame of an injected X; the next target step within 90 frames is auto-confirmed */
@@ -59,9 +58,10 @@ void bb_command_hook(void)
         commit(w, kind, 10, f_list_count(w, 0, 1) - 1);
         return;
     }
-    if (l1 & 0x80) {                                        /* Escape: action type 5 */
-        if (f_unit_state(RD32(RD32(w + 0x2c) + 0x18) + 0x120) & 0x1000) { f_menu_se(10); return; }
-        commit(w, kind, 5, 0);
+    if (l1 & 0x80) {                                        /* Escape: action type 6 (5 is Revert) */
+        u32 bt = RD32(GP - 0x5a0c);                         /* battles that forbid escape: flag in the battle table */
+        if (!bt || RD8(RD32(bt + 0x27c) * 0x28 + RD32(GP - 0x62bc))) { f_menu_se(10); return; }
+        commit(w, kind, 6, 0);
         return;
     }
     /* right stick: jump a page (4 entries) up/down, no wrap; edge-triggered */
