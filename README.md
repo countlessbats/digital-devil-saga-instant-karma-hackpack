@@ -49,6 +49,11 @@ On the field, **SELECT** cycles 1-for-1 → 2-for-1 → … → 5-for-1 (with a 
 
 Boss battles are unchanged. The mode is stored in your save.
 
+### QuickStart
+While the logos or the intro movie are playing:
+- **any button** skips all of it and lands on the main menu;
+- **START** skips all of it and loads your most recent save (picked by the memory card's save time, or the longest play time if the card has no dates).
+
 ### WordTripper
 All text fades in at once instead of letter by letter.
 
@@ -65,7 +70,7 @@ Savestates made with a mod on keep that mod's code in memory; after changing whi
 With Python 3 from the repository:
 ```
 python tools/install.py "<PCSX2 data folder>"              # all mods
-python tools/install.py "<PCSX2 data folder>" --no-turbo   # skip a mod: --no-turbo / --no-set / --no-prey / --no-buttons / --no-subtle / --no-sun / --no-wordtripper / --no-twoforone
+python tools/install.py "<PCSX2 data folder>" --no-turbo   # skip a mod: --no-turbo / --no-set / --no-prey / --no-buttons / --no-subtle / --no-sun / --no-wordtripper / --no-twoforone / --no-quickstart
 ```
 This copies the patch file, enables the chosen mods and sets EE Cycle Rate 300% in the game's settings file (other settings are kept).
 

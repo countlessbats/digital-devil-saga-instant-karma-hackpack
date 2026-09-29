@@ -145,6 +145,7 @@ PATCH_SK = 'Good Karma - SubtleKarma'
 PATCH_SUN = 'Good Karma - SunKing'
 PATCH_WT = 'Good Karma - WordTripper'
 PATCH_TFO = 'Good Karma - TwoForOne'
+PATCH_QS = 'Good Karma - QuickStart'
 ATLAS_ADDR = 0x000A0000
 
 def build(include_test=False):
@@ -224,6 +225,16 @@ def build(include_test=False):
     for site in (0x001D1CCC, 0x001D2564):
         hook(lines, site, syms['tfo_hunt_ep'], 'hunt atma bonus')
     hook(lines, 0x001A44C4, syms['tfo_drop'], 'item drop roll')
+    # ---- QuickStart: one press skips all logos/intro to the main menu; START loads the most recent save ----
+    lines += ['', '[%s]' % PATCH_QS, 'author=Good Karma v%s' % VERSION,
+              'description=Any button during the logos/intro skips straight to the main menu. START instead loads '
+              'your most recent save.']
+    blob(lines)
+    lines.append('patch=1,EE,000FD214,word,00000001')            # FEATURES[5]: QuickStart on
+    qa = syms['qs_title']; qhi = (qa + 0x8000) >> 16
+    lines.append('patch=1,EE,0026B11C,word,%08X' % (0x3C080000 | qhi))            # lui $t0, hi(qs_title)
+    lines.append('patch=1,EE,0026B12C,word,%08X' % (0x25080000 | (qa & 0xffff)))  # addiu $t0, $t0, lo(qs_title)
+    hook(lines, 0x001006A4, syms['qs_pad'], 'main loop pad processing (autoload presses)')
     # ---- WordTripper: every glyph starts fading in at once (0x1955d8 reveal gate forced open) ----
     lines += ['', '[%s]' % PATCH_WT, 'author=Good Karma v%s' % VERSION,
               'description=Text appears all at once, fading in together instead of letter by letter.']

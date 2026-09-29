@@ -3,7 +3,7 @@ import socket, struct
 
 class Pine:
     def __init__(self, slot=28012):
-        self.s = socket.create_connection(('127.0.0.1', slot), timeout=5)
+        self.s = socket.create_connection(('127.0.0.1', slot), timeout=30)
 
     def _cmd(self, payload, reply_len):
         self.s.sendall(struct.pack('<I', len(payload) + 4) + payload)

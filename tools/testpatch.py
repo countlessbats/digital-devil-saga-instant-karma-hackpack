@@ -73,6 +73,8 @@ if __name__ == '__main__':
     text, _ = build.build(include_test=True)
     syms = build.build.syms
     lines = [text, '[Test Only - Pad Injection]']
+    if os.environ.get('QS_SLOT'): lines.append('patch=1,EE,000FE0F4,word,%08X' % (0x51530000 | int(os.environ['QS_SLOT'])))
+    if os.environ.get('QS_TEST'): lines.append('patch=1,EE,000FE0F0,word,%08X' % (0x51530000 | int(os.environ['QS_TEST'])))
     for i, w in enumerate(build.asm(INJ_ASM, INJ_CODE)):
         lines.append('patch=1,EE,%08X,word,%08X' % (INJ_CODE + 4 * i, w))
     lines.append('patch=1,EE,%08X,word,%08X' % (INJ_SITE, build.jal(INJ_CODE)))
