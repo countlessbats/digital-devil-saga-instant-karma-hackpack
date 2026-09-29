@@ -52,13 +52,13 @@ Boss battles are unchanged. The mode is stored in your save.
 ### QuickStart
 While the logos or the intro movie are playing:
 - **any button** skips all of it and lands on the main menu;
-- **START** skips all of it and loads your most recent save (picked by the memory card's save time, or the longest play time if the card has no dates). The menus run hidden; you go straight from the logo into the game.
+- **START** skips all of it and loads your most recent save (picked by the memory card's save time, or the longest play time if the card has no dates).
 
 ### SceneSkip
-Press **START** during a cutscene to skip it, including scenes the game normally refuses to skip ("This event cannot be skipped."). One press carries on through scenes that follow straight after, until you have control again. The skip runs with the screen held black (the scene's script still runs to the end, fast-forwarded when Native Turbo is on, so story state is exactly as if you had watched it).
+Press **START** during a cutscene to skip it, including scenes the game normally refuses to skip ("This event cannot be skipped."). One press carries on through scenes that follow straight after, until you have control again. The scene's script still runs to the end (fast-forwarded when Native Turbo is on), so story state is exactly as if you had watched it.
 
 ### OpenChests
-Inspecting a chest (or a floating jewel) opens it straight away: the "A strange object lies on the floor. Touch it?" question and its Yes/No are answered for you. The "Obtained ..." message stays so you see what you got.
+Inspecting a chest (or a floating jewel) opens it straight away: the "A strange object lies on the floor. Touch it?" question and its Yes/No are answered inside the game's own chest script, so they never appear. The "Obtained ..." message stays so you see what you got.
 
 ### WordTripper
 All text fades in at once instead of letter by letter.

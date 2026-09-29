@@ -52,7 +52,7 @@ static const char dir_pattern[] = "/BASLUS-20974-new-*";
 
 extern int hold_black;
 extern u32 field_control_frame;
-static void autoload_start(void) { al_phase = AL_WANT_DIR; al_timer = 0; al_target = -1; hold_black |= 2; }
+static void autoload_start(void) { al_phase = AL_WANT_DIR; al_timer = 0; al_target = -1; }
 static void autoload_end(void)
 {
     hold_black &= ~2;

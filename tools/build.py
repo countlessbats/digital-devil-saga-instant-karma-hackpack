@@ -237,7 +237,6 @@ def build(include_test=False):
     lines.append('patch=1,EE,0026B11C,word,%08X' % (0x3C080000 | qhi))            # lui $t0, hi(qs_title)
     lines.append('patch=1,EE,0026B12C,word,%08X' % (0x25080000 | (qa & 0xffff)))  # addiu $t0, $t0, lo(qs_title)
     hook(lines, 0x001006A4, syms['qs_pad'], 'main loop pad processing (autoload presses)')
-    hook(lines, 0x00102528, syms['black_draw'], 'screen fade draw (held black while loading)')
     hook(lines, 0x00125980, syms['field_hook'], 'field player-control step (tells QuickStart the game is up)')
     # ---- SceneSkip: START skips the whole cutscene (every segment made skippable; the rest fast-forwarded) ----
     lines += ['', '[%s]' % PATCH_SKIP, 'author=Good Karma v%s' % VERSION,
@@ -248,14 +247,14 @@ def build(include_test=False):
     lines.append('patch=1,EE,0022F2F4,word,24020000')            # 'cannot be skipped' check -> skippable
     hook(lines, 0x001006A4, syms['qs_pad'], 'main loop pad processing (shared with QuickStart)')
     hook(lines, 0x00125980, syms['field_hook'], 'field player-control step (tells SceneSkip the player has control)')
-    hook(lines, 0x00102528, syms['black_draw'], 'screen fade draw (held black while skipping)')
     # ---- OpenChests: inspecting a chest opens it at once (question and Yes answered automatically) ----
     lines += ['', '[%s]' % PATCH_CHEST, 'author=Good Karma v%s' % VERSION,
-              'description=Inspecting a chest opens it straight away: no "Touch it?" question or Yes/No. '
+              'description=Inspecting a chest opens it straight away: the "Touch it?" question and Yes/No are answered inside the script, never shown. '
               'The "Obtained" message stays so you see what you got.']
     blob(lines)
     lines.append('patch=1,EE,000FD21C,word,00000001')            # FEATURES[7]: OpenChests on
-    hook(lines, 0x001006A4, syms['qs_pad'], 'main loop pad processing (shared with QuickStart)')
+    lines.append('patch=1,EE,0039E288,word,%08X' % syms['chest_cmd_msg'])      # script command 0 (MSG)
+    lines.append('patch=1,EE,0039E2A0,word,%08X' % syms['chest_cmd_select'])   # script command 3 (SELECT)
     # ---- WordTripper: every glyph starts fading in at once (0x1955d8 reveal gate forced open) ----
     lines += ['', '[%s]' % PATCH_WT, 'author=Good Karma v%s' % VERSION,
               'description=Text appears all at once, fading in together instead of letter by letter.']
