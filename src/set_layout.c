@@ -45,7 +45,7 @@ typedef struct {
     int cat_crop_bottom;                   /* lower the category name label (and its ! marker) */
 } Layout;
 
-#define LAY_MAGIC 0x4c41591a
+#define LAY_MAGIC 0x4c41591b
 #define LAY ((volatile Layout *)0x000FF000)
 
 /* game functions */
@@ -121,7 +121,7 @@ static void layout_defaults(void)
     l->asg_x = 64;    l->asg_y = 277;  l->asg_rowh = 0x98;
     l->help_dx = 4416; l->help_dy = -2442;
     l->port_dx = 120;  l->port_dy = 709;
-    l->cat_x = -608;   l->cat_y = 1438;
+    l->cat_x = -608;   l->cat_y = 1453;
     l->grid_x = 0;     l->grid_y = 1986; l->grid_pitch = 2662;
     l->grid_cols = 3;  l->grid_rows = 8;  l->grid_rowh = 0;
     l->sort_x = 4941;  l->sort_y = 1838;

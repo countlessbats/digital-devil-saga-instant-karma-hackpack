@@ -1,5 +1,5 @@
 gametitle=Shin Megami Tensei: Digital Devil Saga (USA) [SLUS-20974] (D7273511)
-comment=DDS1 mods v0.3.12
+comment=DDS1 mods v0.3.13
 
 // Native turbo: hold L2 = 3x, hold R2 = 6x, L3/R3 toggle 3x/6x (off in main menu)
 patch=1,EE,000F0020,word,27BDFFE0
@@ -2771,7 +2771,7 @@ patch=1,EE,000F39C4,word,DFBF0018
 patch=1,EE,000F39C8,word,03E00008
 patch=1,EE,000F39CC,word,27BD0020
 patch=1,EE,000F39D0,word,3C014C41
-patch=1,EE,000F39D4,word,3422591A
+patch=1,EE,000F39D4,word,3422591B
 patch=1,EE,000F39D8,word,3C04000F
 patch=1,EE,000F39DC,word,3483F000
 patch=1,EE,000F39E0,word,8C610000
@@ -2813,7 +2813,7 @@ patch=1,EE,000F3A6C,word,3C0B4444
 patch=1,EE,000F3A70,word,348CF02C
 patch=1,EE,000F3A74,word,348DF028
 patch=1,EE,000F3A78,word,240E07C2
-patch=1,EE,000F3A7C,word,240F059E
+patch=1,EE,000F3A7C,word,240F05AD
 patch=1,EE,000F3A80,word,2418FDA0
 patch=1,EE,000F3A84,word,3499F03C
 patch=1,EE,000F3A88,word,3490F038
