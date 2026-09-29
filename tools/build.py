@@ -4,6 +4,8 @@ Usage: python tools/build.py [--install DIR ...]
 Writes build/D7273511.pnach; --install copies it into each given PCSX2 patches dir.
 """
 import os, sys, struct, shutil, keystone
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import cbuild
 
 ROOT = os.path.join(os.path.dirname(__file__), '..')
 VERSION = open(os.path.join(ROOT, 'VERSION')).read().strip()
@@ -142,6 +144,16 @@ def build():
     for i, w in enumerate(words):
         lines.append('patch=1,EE,%08X,word,%08X' % (TURBO_CODE + 4 * i, w))
     lines.append('patch=1,EE,%08X,word,%08X' % (HOOK_SITE, jal(TURBO_CODE)))
+    # ---- C mods (src/*.c) ----
+    segs, syms = cbuild.build()
+    lines.append('')
+    lines.append('// SET menu: START cycles LEARNED sort (Game / Cost / A-Z)')
+    for addr, data in segs:
+        data = data + b'\0' * (-len(data) % 4)
+        for i in range(0, len(data), 4):
+            lines.append('patch=1,EE,%08X,word,%08X' % (addr + i, struct.unpack_from('<I', data, i)[0]))
+    lines.append('patch=1,EE,%08X,word,%08X' % (0x0027862C, jal(syms['set_finalize'])))  # builder finalize call
+    lines.append('patch=1,EE,%08X,word,%08X' % (0x0037CC9C, syms['set_logic']))           # SET logic task table
     return '\n'.join(lines) + '\n', words
 
 if __name__ == '__main__':

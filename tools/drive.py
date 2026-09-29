@@ -11,9 +11,12 @@ SS = r'<local path>).%02d.p2s'
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 p = Pine()
 
-def wait_vbl(n):
-    v = p.r32(VBL)
-    while p.r32(VBL) - v < n: time.sleep(0.05)
+def wait_vbl(n, timeout=20):
+    v = p.r32(VBL); t = time.time()
+    while p.r32(VBL) - v < n:
+        if time.time() - t > timeout:
+            raise SystemExit('emulator stalled (status %d)' % p.status())
+        time.sleep(0.05)
 
 def press(name, hold=6, after=30):
     m = 0
