@@ -1,5 +1,5 @@
 gametitle=Shin Megami Tensei: Digital Devil Saga (USA) [SLUS-20974] (D7273511)
-comment=DDS1 mods v0.1.3
+comment=DDS1 mods v0.1.4
 
 // Native turbo: hold L2 = 3x, hold R2 = 6x, L3/R3 toggle 3x/6x
 patch=1,EE,000F0020,word,27BDFFE0
@@ -14,14 +14,14 @@ patch=1,EE,000F0040,word,A6280002
 patch=1,EE,000F0044,word,01095026
 patch=1,EE,000F0048,word,01485024
 patch=1,EE,000F004C,word,922B0000
-patch=1,EE,000F0050,word,314C0002
+patch=1,EE,000F0050,word,314C0200
 patch=1,EE,000F0054,word,11800005
 patch=1,EE,000F0058,word,240D0003
 patch=1,EE,000F005C,word,156D0002
 patch=1,EE,000F0060,word,00000000
 patch=1,EE,000F0064,word,240D0000
 patch=1,EE,000F0068,word,01A05825
-patch=1,EE,000F006C,word,314C0004
+patch=1,EE,000F006C,word,314C0400
 patch=1,EE,000F0070,word,11800005
 patch=1,EE,000F0074,word,240D0006
 patch=1,EE,000F0078,word,156D0002
@@ -30,11 +30,11 @@ patch=1,EE,000F0080,word,240D0000
 patch=1,EE,000F0084,word,01A05825
 patch=1,EE,000F0088,word,A22B0000
 patch=1,EE,000F008C,word,01608025
-patch=1,EE,000F0090,word,310C0100
+patch=1,EE,000F0090,word,310C0001
 patch=1,EE,000F0094,word,11800002
 patch=1,EE,000F0098,word,00000000
 patch=1,EE,000F009C,word,24100003
-patch=1,EE,000F00A0,word,310C0200
+patch=1,EE,000F00A0,word,310C0002
 patch=1,EE,000F00A4,word,11800002
 patch=1,EE,000F00A8,word,00000000
 patch=1,EE,000F00AC,word,24100006

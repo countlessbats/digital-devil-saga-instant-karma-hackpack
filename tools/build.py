@@ -33,7 +33,7 @@ TURBO_ASM = """
     xor   $10, $8, $9
     and   $10, $10, $8           # newly pressed
     lbu   $11, 0($s1)             # toggle multiplier (0 = off)
-    andi  $12, $10, 0x2           # L3 -> toggle 3x
+    andi  $12, $10, 0x200         # L3 -> toggle 3x
     beq   $12, $zero, no_l3
     addiu $13, $zero, 3
     bne   $11, $13, set_l3
@@ -42,7 +42,7 @@ TURBO_ASM = """
 set_l3:
     or    $11, $13, $zero
 no_l3:
-    andi  $12, $10, 0x4           # R3 -> toggle 6x
+    andi  $12, $10, 0x400         # R3 -> toggle 6x
     beq   $12, $zero, no_r3
     addiu $13, $zero, 6
     bne   $11, $13, set_r3
@@ -53,12 +53,12 @@ set_r3:
 no_r3:
     sb    $11, 0($s1)
     or    $s0, $11, $zero         # N = toggle
-    andi  $12, $8, 0x100         # hold L2 -> 3x
+    andi  $12, $8, 0x1           # hold L2 -> 3x
     beq   $12, $zero, no_l2
     nop
     addiu $s0, $zero, 3
 no_l2:
-    andi  $12, $8, 0x200         # hold R2 -> 6x
+    andi  $12, $8, 0x2           # hold R2 -> 6x
     beq   $12, $zero, no_r2
     nop
     addiu $s0, $zero, 6
