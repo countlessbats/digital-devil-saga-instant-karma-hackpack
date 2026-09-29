@@ -33,9 +33,12 @@ typedef struct {
     int div_dx, div_w;                  /* divider x offset from each column start, and width */
     int undo_keep;                      /* texels kept of the 64-texel dash sprite (6 dashes) */
     int undo_lx, undo_x, undo_rx;       /* Undo row: left dashes, "Undo", right dashes (cell-relative) */
+    int box_x0, box_y0, box_x1, box_y1; /* outline around the grid (screen units); dividers span y0..y1 */
+    int line_w, line_h;                 /* vertical line width, horizontal line height */
+    int mark_dx, mark_dy;               /* per-skill "new" marker, relative to the end of the name */
 } Layout;
 
-#define LAY_MAGIC 0x4c415911
+#define LAY_MAGIC 0x4c415913
 #define LAY ((volatile Layout *)0x000FF000)
 
 /* game functions */
@@ -82,6 +85,21 @@ static u32 text_font(int x, int y, u32 color, const char *str, int font)
     return f_txt_link(0, o, 0);
 }
 
+#define f_txt_free     ((void (*)(u32))0x00194840)
+
+/* Rendered width of an ASCII string in font 1, in screen units (built like 0x197760, then freed). */
+static int text_width(const char *str)
+{
+    f_txt_flag_on(1);
+    u32 o = f_txt_make(str, 1, 0, 0, 0);
+    f_txt_flag_on(2);
+    f_txt_flag_off(1);
+    if (!o) return 0;
+    int w = (int)RD32(o + 0xc) * 16;
+    f_txt_free(o);
+    return w;
+}
+
 #define HELP_SRC     0x003baa98u   /* gp-0x6258: help text table */
 #define PRIO         0x53
 
@@ -97,7 +115,7 @@ static void layout_defaults(void)
     l->help_dx = 4416; l->help_dy = -2442;
     l->port_dx = 0;    l->port_dy = 709;
     l->cat_x = -608;   l->cat_y = 1438;
-    l->grid_x = 0;     l->grid_y = 1941; l->grid_pitch = 2662;
+    l->grid_x = 0;     l->grid_y = 1986; l->grid_pitch = 2662;
     l->grid_cols = 3;  l->grid_rows = 8;  l->grid_rowh = 0;
     l->sort_x = 5786;  l->sort_y = 1747;
     l->strip_w = 0;
@@ -108,13 +126,16 @@ static void layout_defaults(void)
     l->skip = 0;
     l->unit_dx = -72; l->unit_dy = 0;
     l->hint_probe = 0;
-    l->h_y = 0xcf0; l->h_text_y = 0xcf0;
+    l->h_y = 3372; l->h_text_y = 3372;
     l->h_start_x = 422; l->h_tri_x = 2035; l->h_l1_x = 3840; l->h_x_x = 5709; l->h_o_x = 6848;
     l->h_type_x = 2624; l->h_type_y = 1590;
     l->h_color = 0xa09dc340;
     l->frames = 0;
-    l->div_color = 0x40a0a0a0; l->div_dx = -40; l->div_w = 16;
+    l->div_color = 0x44445a80; l->div_dx = 88; l->div_w = 16;
     l->undo_keep = 53; l->undo_lx = 152; l->undo_x = 1064; l->undo_rx = 1816;
+    l->box_x0 = 16; l->box_y0 = 1980; l->box_x1 = 8166; l->box_y1 = 3362;
+    l->line_w = 16; l->line_h = 16;
+    l->mark_dx = -0xb0; l->mark_dy = -0x38;
     l->magic = LAY_MAGIC;
 }
 
@@ -159,6 +180,14 @@ static void set_undo_offsets(int lx, int x, int rx)
     patch_imm(0x00277f20u, 0x26b30000u, x);
     patch_imm(0x00277f70u, 0x26a40000u, rx);
 }
+
+/* The callback draws the "new skill" marker left of the name (beqz at 0x277fb4 skips it when the
+ * skill isn't new); make that branch unconditional so the grid can draw it at the name's end. */
+static void disable_row_marker(void)
+{
+    if (RD32(0x00277fb4u) != 0x10000008u) RD32(0x00277fb4u) = 0x10000008u;
+}
+#define f_is_new ((int (*)(u32, u32))0x002cda48)
 
 static void set_cost_offset(int dx)
 {
@@ -252,6 +281,10 @@ static void draw_grid(u32 W)
     set_cost_offset(l->cost_dx);
     costfn_prepare();
     set_undo_offsets(l->undo_lx, l->undo_x, l->undo_rx);
+    disable_row_marker();
+    u32 cwa = RD32(L + 0x30);
+    u32 cidx = RD32(RD32(RD32(cwa + 0x7d8) + 0x1c));
+    u32 chardata = RD32(0x003baa00u) + cidx * 0x1a4 + 0xa60;
     /* crop the Undo dash sprites (sheet work+0x68, 9 = selected, 10 = normal) to undo_keep texels */
     u32 dsheet = RD32(RD32(L + 0x30) + 0x68);
     u32 dd[2]; u32 dw[2], du[2];
@@ -290,11 +323,17 @@ static void draw_grid(u32 W)
     }
     RD32(L) = s_flags;
 
-    /* fine divider lines between columns */
-    if (l->div_color)
+    /* outline + divider lines, all in the category pane's edge colour */
+    if (l->div_color) {
+        int x0 = l->box_x0, y0 = l->box_y0, x1 = l->box_x1, y1 = l->box_y1, lw = l->line_w, lh = l->line_h;
+        int col = (int)l->div_color;
+        f_fillquad(x0, y0, 0, x1 - x0, lh, col, PRIO);            /* top: continues the pane's bottom edge */
+        f_fillquad(x0, y1 - lh, 0, x1 - x0, lh, col, PRIO);       /* bottom */
+        f_fillquad(x0, y0, 0, lw, y1 - y0, col, PRIO);            /* left */
+        f_fillquad(x1 - lw, y0, 0, lw, y1 - y0, col, PRIO);       /* right */
         for (int c = 1; c < cols; c++)
-            f_fillquad(l->grid_x + c * l->grid_pitch + l->div_dx, l->grid_y, 0, l->div_w, rows * rowh,
-                       (int)l->div_color, PRIO);
+            f_fillquad(l->grid_x + c * l->grid_pitch + l->div_dx, y0, 0, l->div_w, y1 - y0, col, PRIO);
+    }
 
     /* cursor highlight in the cursor's column */
     if (s_cnt) {
@@ -312,8 +351,14 @@ static void draw_grid(u32 W)
             if (i >= n) break;
             RD32(L + 0x38) = (r == 0 && c == 0) ? s_mark : 0;
             RD32(L + 0x18) = cells[i];
-            f_rows(l->grid_x + c * l->grid_pitch, l->grid_y + r * rowh, 0,
-                   l->name_dx, (int)RD32(W + 0xc), (int)alpha, (int)RD32(W + 4), L, PRIO);
+            int cx = l->grid_x + c * l->grid_pitch, cy = l->grid_y + r * rowh;
+            f_rows(cx, cy, 0, l->name_dx, (int)RD32(W + 0xc), (int)alpha, (int)RD32(W + 4), L, PRIO);
+            u32 id = RD32(cells[i] + ITEM_ID);
+            if (id - 1 < 0xfffeu && f_is_new(chardata, id & 0xffff)) {
+                const char *nm = (const char *)RD32(cells[i] + 4);
+                int w = nm ? text_width(nm) : 0;
+                f_sprite(cx + l->name_dx + w + l->mark_dx, cy + l->mark_dy, 0, 1, RD32(cwa + 0xe0), 0x32, PRIO);
+            }
         }
     }
 
@@ -439,7 +484,10 @@ static void draw_set_screen(u32 task, int slot_mode)
     RD32(AL + 0x28) = s_rowh;
 
     if (!(l->skip & 16)) {
-        if (slot_mode) f_hints(0, RD32(wa + 0x78));
+        if (slot_mode) {
+            f_sprite(0x1630, l->h_y, 0, 1, RD32(wa + 0x78), 4, PRIO);
+            f_sprite(0x1a80, l->h_y, 0, 1, RD32(wa + 0x78), 5, PRIO);
+        }
         else draw_learned_hints(RD32(wa + 0x78));
     }
     if (l->hint_probe == 2)
