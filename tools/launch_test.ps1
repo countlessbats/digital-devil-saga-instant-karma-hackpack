@@ -9,3 +9,9 @@ while ((Get-Date) -lt $deadline) {
     try { $c = New-Object System.Net.Sockets.TcpClient('127.0.0.1', 28012); $c.Close(); break } catch { Start-Sleep -Milliseconds 500 }
 }
 Start-Sleep -Seconds 3
+# wait until the VM answers memory reads (the socket opens before the game is loaded)
+& '<local path>' -c "import sys,time; sys.path.insert(0,r'<local path>'); from pine import Pine
+for i in range(120):
+    try:
+        p=Pine(); p.r32(0x100000); break
+    except Exception: time.sleep(0.5)"

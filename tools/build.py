@@ -156,6 +156,7 @@ def build():
     lines.append('patch=1,EE,%08X,word,%08X' % (0x0037CC9C, syms['set_logic']))           # SET logic task table
     lines.append('patch=1,EE,%08X,word,%08X' % (0x0037CCA0, syms['set_draw']))            # SET draw task table
     lines.append('patch=1,EE,%08X,word,%08X' % (0x0037CC68, syms['set_draw_slot']))       # SET slot-select draw
+    lines.append('patch=1,EE,%08X,word,%08X' % (0x00278020, jal(syms['costfn_copy'])))    # LEARNED cost/unit drawer
     return '\n'.join(lines) + '\n', words
 
 if __name__ == '__main__':

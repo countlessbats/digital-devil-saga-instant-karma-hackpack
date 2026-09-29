@@ -86,8 +86,11 @@ static void sort_list(u32 list)
 }
 
 /* Replaces the builder's per-tab jal 0x27e100 at 0x27862c. */
+extern void costfn_prepare(void);
+
 void set_finalize(u32 list, int a1, int a2)
 {
+    costfn_prepare();
     int n = collect(list);
     for (int i = 0; i < n; i++) RD32(items[i] + ITEM_TAG) = i;
     fn_list_finalize(list, a1, a2);

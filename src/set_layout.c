@@ -21,9 +21,16 @@ typedef struct {
     int cost_dx;                        /* cost block offset within a cell (game: 0x930) */
     int bang_x, bang_y;                 /* anchor of the "LEARNED" title sprite (widget+0x34) */
     u32 skip;                           /* debug: bit mask of draw calls to skip (see set_draw) */
+    int unit_dx, unit_dy;               /* HP/MP unit label offset in LEARNED (game: +0x140, +0) */
+    int hint_probe;                     /* debug: draw hint-sheet sprites 0..15 */
+    int h_y, h_text_y;                  /* hint bar: sprite row y, text row y */
+    int h_start_x, h_type_x, h_tri_x, h_l1_x, h_x_x, h_o_x;   /* hint bar item x positions */
+    u32 h_color;                        /* hint text colour (pointer into the game's colour table) */
+    int h_type_y;                       /* "L2/R2" label beside the tab row: h_type_x, h_type_y */
+    int nudge_on;                       /* set by tools/nudge.py while NumLock move mode is active */
 } Layout;
 
-#define LAY_MAGIC 0x4c41590c
+#define LAY_MAGIC 0x4c41590f
 #define LAY ((volatile Layout *)0x000FF000)
 
 /* game functions */
@@ -49,6 +56,26 @@ typedef struct {
 #define f_textsubmit ((void (*)(u32))0x00194920)
 #define f_text       ((u32 (*)(int, int, int, u32, const char *, int))0x00197760)
 
+#define f_txt_flag_on  ((void (*)(int))0x00195520)
+#define f_txt_flag_off ((void (*)(int))0x00195530)
+#define f_txt_make     ((u32 (*)(const char *, int, int, int, u32))0x00195160)
+#define f_txt_pos      ((void (*)(u32, int, int))0x00195450)
+#define f_txt_z        ((void (*)(u32, u32))0x00195460)
+#define f_txt_link     ((u32 (*)(u32, u32, int))0x00195b78)
+
+/* ASCII text object in a given font (0x197760 hardwires font 1); submit with f_textprep+f_textsubmit */
+static u32 text_font(int x, int y, u32 color, const char *str, int font)
+{
+    f_txt_flag_on(1);
+    u32 o = f_txt_make(str, font, 0, 0, 0);
+    f_txt_flag_on(2);
+    f_txt_flag_off(1);
+    f_txt_pos(o, x, y);
+    f_txt_z(o, 0);
+    f_textcolor(o, color);
+    return f_txt_link(0, o, 0);
+}
+
 #define HELP_SRC     0x003baa98u   /* gp-0x6258: help text table */
 #define PRIO         0x53
 
@@ -73,7 +100,38 @@ static void layout_defaults(void)
     l->name_dx = 0x60; l->cost_dx = 0x863;
     l->bang_x = 4186;  l->bang_y = 1889;
     l->skip = 0;
+    l->unit_dx = -0x20; l->unit_dy = 0;
+    l->hint_probe = 0;
+    l->h_y = 0xcf0; l->h_text_y = 0xcf0;
+    l->h_start_x = 422; l->h_tri_x = 2035; l->h_l1_x = 3840; l->h_x_x = 5709; l->h_o_x = 6848;
+    l->h_type_x = 2624; l->h_type_y = 1590;
+    l->h_color = 0xa09dc340;
     l->magic = LAY_MAGIC;
+}
+
+/* Private copy of the cost/unit drawer 0x277640 (shared by 4 menus) for LEARNED only: the row
+ * callback's call at 0x278020 is pointed at this copy by the pnach. The copy is position
+ * independent (relative branches, absolute jal, sp-relative stack args). We patch:
+ *   +0x124 "addiu s3,s3,0x140"  -> unit label x offset
+ *   +0x18c / +0x1c0 "move a1,s5" -> "addiu a1,s5,dy" unit label y offset */
+#define COSTFN      0x00277640u
+#define COSTFN_LEN  (0x204 / 4)
+u32 costfn_copy[COSTFN_LEN] __attribute__((aligned(16)));
+static int costfn_ready, costfn_dx, costfn_dy;
+void costfn_prepare(void)
+{
+    volatile Layout *l = LAY;
+    int fresh = !costfn_ready;
+    if (fresh) {
+        for (int i = 0; i < COSTFN_LEN; i++) costfn_copy[i] = RD32(COSTFN + i * 4);
+        costfn_ready = 1;
+    }
+    if (fresh || l->unit_dx != costfn_dx || l->unit_dy != costfn_dy) {
+        costfn_dx = l->unit_dx; costfn_dy = l->unit_dy;
+        costfn_copy[0x124 / 4] = 0x26730000u | ((u32)(0x140 + costfn_dx) & 0xffff);
+        costfn_copy[0x18c / 4] = 0x26a50000u | ((u32)costfn_dy & 0xffff);
+        costfn_copy[0x1c0 / 4] = 0x26a50000u | ((u32)costfn_dy & 0xffff);
+    }
 }
 
 /* The LEARNED row callback (0x277df8, used only by LEARNED lists) places the cost block at
@@ -169,6 +227,24 @@ static void draw_grid(u32 W)
         f_sprite_a(l->bang_x, l->bang_y, 0, (int)alpha, 0, sheet, (int)idx, PRIO);
     }
     set_cost_offset(l->cost_dx);
+    costfn_prepare();
+    if (l->nudge_on) {
+        static char buf[32];
+        int k = 0;
+        const char *pre = "MOVE ";
+        while (*pre) buf[k++] = *pre++;
+        for (int a = 0; a < 2; a++) {
+            int v = a ? l->unit_dy : l->unit_dx;
+            char d[8]; int m = 0;
+            if (v < 0) { buf[k++] = '-'; v = -v; }
+            do { d[m++] = '0' + v % 10; v /= 10; } while (v && m < 7);
+            while (m) buf[k++] = d[--m];
+            buf[k++] = a ? 0 : ',';
+        }
+        u32 t = text_font(l->sort_x, l->sort_y - 0xa0, 0xa09dc366, buf, 1);
+        f_textprep(t, 1, 0x54);
+        f_textsubmit(t);
+    }
 
     for (int c = 0; c < cols; c++) {
         int x = l->grid_x + c * l->grid_pitch;
@@ -267,6 +343,25 @@ static void draw_help(u32 wa, u32 id)
     }
 }
 
+/* LEARNED hint bar: the game's sprites for Rearrange / L1R1 Character / Select / Cancel
+ * (hint sheet 6, 3, 4, 5), plus text hints for the new controls. */
+static void hint_text(int x, int y, const char *str)
+{
+    u32 t = text_font(x, y, LAY->h_color, str, 1);
+    f_textprep(t, 1, 0x54);
+    f_textsubmit(t);
+}
+static void draw_learned_hints(u32 sheet)
+{
+    volatile Layout *l = LAY;
+    hint_text(l->h_start_x, l->h_text_y, "START Sort");
+    hint_text(l->h_type_x, l->h_type_y, "L2/R2");
+    f_sprite(l->h_tri_x, l->h_y, 0, 1, sheet, 6, PRIO);
+    f_sprite(l->h_l1_x, l->h_y, 0, 1, sheet, 3, PRIO);
+    f_sprite(l->h_x_x, l->h_y, 0, 1, sheet, 4, PRIO);
+    f_sprite(l->h_o_x, l->h_y, 0, 1, sheet, 5, PRIO);
+}
+
 /* Shared SET screen draw. slot_mode = 0: LEARNED has focus (original 0x279f88);
  * slot_mode = 1: picking an ASSIGNED slot / rearranging (original 0x279568). */
 static void draw_set_screen(u32 task, int slot_mode)
@@ -303,7 +398,19 @@ static void draw_set_screen(u32 task, int slot_mode)
     if (!(l->skip & 0x200000)) f_widget(l->asg_x, l->asg_y, 0, asg, PRIO);
     RD32(AL + 0x28) = s_rowh;
 
-    if (!(l->skip & 16)) f_hints(slot_mode ? 0 : 3, RD32(wa + 0x78));
+    if (!(l->skip & 16)) {
+        if (slot_mode) f_hints(0, RD32(wa + 0x78));
+        else draw_learned_hints(RD32(wa + 0x78));
+    }
+    if (l->hint_probe == 2)
+        for (int f = 0; f < 4; f++) {
+            u32 t = text_font(0x300, 0x600 + f * 0x180, 0xa09dc35a, "L2R2 Type  START Sort", f);
+            f_textprep(t, 1, 0x54);
+            f_textsubmit(t);
+        }
+    if (l->hint_probe == 1)
+        for (int i = 0; i < 16; i++)
+            f_sprite(0x200 + (i % 4) * 0x7c0, 0x500 + (i / 4) * 0x280, 0, 1, RD32(wa + 0x78), i, PRIO);
     if (!(l->skip & 8)) f_component(wa + 8, wa + 0x54, 1, task);
 }
 
