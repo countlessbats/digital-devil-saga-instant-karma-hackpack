@@ -7,21 +7,6 @@
 static u8 sort_mode;        /* 0 default (game order), 1 cost, 2 alphabetical */
 static u32 items[MAX_ITEMS];
 
-/* Prompt shown in the SET header ("Set which skill?", 24-byte buffer). */
-#define PROMPT_ADDR 0x003b1bc8u
-static const char *const prompts[MODES] = {
-    "Set skill (sort: Game)", "Set skill (sort: Cost)", "Set skill (sort: A-Z)",
-};
-
-static void set_prompt(void)
-{
-    const char *s = prompts[sort_mode];
-    char *d = (char *)PROMPT_ADDR;
-    int i = 0;
-    for (; s[i] && i < 23; i++) d[i] = s[i];
-    d[i] = 0;
-}
-
 static int is_blank(u32 id) { return id == 0 || id == 0xffff; }
 
 static u32 char_data(u32 list)
@@ -107,12 +92,14 @@ void set_finalize(u32 list, int a1, int a2)
     for (int i = 0; i < n; i++) RD32(items[i] + ITEM_TAG) = i;
     fn_list_finalize(list, a1, a2);
     if (sort_mode) sort_list(list);
-    set_prompt();
 }
 
 /* Replaces the SET learned-list logic task (table entry 0x37cc9c). */
+extern void grid_input(u32 task);
+
 int set_logic(int a0, int a1, int a2, int a3, int a4, int a5, int a6, int a7)
 {
+    grid_input((u32)a0);
     if (RD8(MENU_PAD + PAD_START) & 0x80) {
         sort_mode = (sort_mode + 1) % MODES;
         u32 lists = RD32(fn_task_work((u32)a0) + 0x90c);   /* a0 = task */
@@ -120,7 +107,12 @@ int set_logic(int a0, int a1, int a2, int a3, int a4, int a5, int a6, int a7)
             u32 w = RD32(lists + 0x10 + t * 4);
             if (w) sort_list(RD32(w + 0x14));
         }
-        set_prompt();
     }
     return fn_set_logic(a0, a1, a2, a3, a4, a5, a6, a7);
+}
+
+const char *sort_label(void)
+{
+    static const char *const labels[MODES] = { "Sort: Game", "Sort: Cost", "Sort: A-Z" };
+    return labels[sort_mode];
 }
