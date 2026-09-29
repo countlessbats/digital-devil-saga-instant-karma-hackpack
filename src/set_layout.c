@@ -39,9 +39,11 @@ typedef struct {
     int arrow_dx;                       /* cursor's left-pointing arrow, relative to the end of the name */
     int row_lines, row_line_dy;         /* horizontal lines between grid rows (on/off, y offset) */
     u32 box_fill;                       /* translucent panel fill inside the box (0xRRGGBBAA, 0 = none) */
+    int cat_crop_top, cat_crop_right;   /* trim the category pane backdrop (screen units) */
+    int cat_crop_left;
 } Layout;
 
-#define LAY_MAGIC 0x4c415917
+#define LAY_MAGIC 0x4c415918
 #define LAY ((volatile Layout *)0x000FF000)
 
 /* game functions */
@@ -141,6 +143,7 @@ static void layout_defaults(void)
     l->mark_dx = -0xb0; l->mark_dy = -0x38;
     l->arrow_dx = 0; l->row_lines = 1; l->row_line_dy = -16;
     l->box_fill = 0x00000030;
+    l->cat_crop_top = 130; l->cat_crop_right = 742; l->cat_crop_left = 666;
     l->magic = LAY_MAGIC;
 }
 
@@ -416,7 +419,28 @@ static void draw_learned_side(u32 wa, u32 s1, u32 tab)
         f_sprite(0x10e0, 0xa18, 0, 1, RD32(wa + 0xe0), 0x1d, PRIO);
     }
     f_tabsel(RD32(s1 + 0x20), tab);
-    if (!(l->skip & 1)) f_tabrow(l->cat_x, l->cat_y, 0, RD32(s1 + 0x20), PRIO);
+    if (!(l->skip & 1)) {
+        /* category pane backdrop = tab object sprite (obj+0x20 sheet, obj+0x24 index); crop top/right */
+        u32 to = RD32(s1 + 0x20), cd = 0, cs[7] = {0};
+        if (RD32(to + 0x20) && (l->cat_crop_top || l->cat_crop_right || l->cat_crop_left)) {
+            u32 sh = RD32(to + 0x20); int ix = (int)RD32(to + 0x24);
+            cd = f_sprdef(sh, ix);
+            u32 img = RD32(sh + 0x10) + (u32)ix * 0x80;
+            cs[0] = RD32(cd + 8); cs[1] = RD32(cd + 0xc); cs[2] = RD32(cd + 0x10);
+            cs[3] = RD32(cd + 0x54); cs[4] = RD32(cd + 0x58); cs[5] = RD32(cd + 4); cs[6] = RD32(cd + 0x50);
+            int w = (int)cs[1], h = (int)cs[2];
+            int us = (int)RD32(img + 0x5c) - (int)RD32(img + 0x54), vs = (int)RD32(img + 0x60) - (int)RD32(img + 0x58);
+            RD32(cd + 8) = cs[0] + (u32)l->cat_crop_top;
+            RD32(cd + 0x10) = (u32)(h - l->cat_crop_top);
+            RD32(cd + 0x54) = cs[3] + (u32)(vs * l->cat_crop_top / h);
+            RD32(cd + 0xc) = (u32)(w - l->cat_crop_right - l->cat_crop_left);
+            RD32(cd + 0x58) = cs[4] - (u32)(us * l->cat_crop_right / w);
+            RD32(cd + 4) = cs[5] + (u32)l->cat_crop_left;
+            RD32(cd + 0x50) = cs[6] + (u32)(us * l->cat_crop_left / w);
+        }
+        f_tabrow(l->cat_x, l->cat_y, 0, to, PRIO);
+        if (cd) { RD32(cd + 8) = cs[0]; RD32(cd + 0xc) = cs[1]; RD32(cd + 0x10) = cs[2]; RD32(cd + 0x54) = cs[3]; RD32(cd + 0x58) = cs[4]; RD32(cd + 4) = cs[5]; RD32(cd + 0x50) = cs[6]; }
+    }
     if (l->grid_cols <= 1 && !l->grid_rowh) f_widget(l->grid_x, l->grid_y, 0, W, PRIO);
     else if (!(l->skip & 0x400000)) draw_grid(W);
     /* keep the other tabs' widgets in the same animation state (as the game does) */
