@@ -30,7 +30,7 @@ typedef struct {
     int nudge_on;                       /* set by tools/nudge.py while NumLock move mode is active */
 } Layout;
 
-#define LAY_MAGIC 0x4c41590f
+#define LAY_MAGIC 0x4c415910
 #define LAY ((volatile Layout *)0x000FF000)
 
 /* game functions */
@@ -100,7 +100,7 @@ static void layout_defaults(void)
     l->name_dx = 0x60; l->cost_dx = 0x863;
     l->bang_x = 4186;  l->bang_y = 1889;
     l->skip = 0;
-    l->unit_dx = -0x20; l->unit_dy = 0;
+    l->unit_dx = -72; l->unit_dy = 0;
     l->hint_probe = 0;
     l->h_y = 0xcf0; l->h_text_y = 0xcf0;
     l->h_start_x = 422; l->h_tri_x = 2035; l->h_l1_x = 3840; l->h_x_x = 5709; l->h_o_x = 6848;
