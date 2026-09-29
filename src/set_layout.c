@@ -41,7 +41,7 @@ typedef struct {
     u32 box_fill;                       /* translucent panel fill inside the box (0xRRGGBBAA, 0 = none) */
 } Layout;
 
-#define LAY_MAGIC 0x4c415915
+#define LAY_MAGIC 0x4c415917
 #define LAY ((volatile Layout *)0x000FF000)
 
 /* game functions */
@@ -114,9 +114,9 @@ static void layout_defaults(void)
     if (l->magic == LAY_MAGIC) return;
     /* ASSIGNED top-left, HELP top-right, status under HELP, tabs under ASSIGNED,
      * LEARNED as a 3x8 grid across the full width (px ~ units/12.8 across, /7.47 down) */
-    l->asg_x = 256;   l->asg_y = 187;  l->asg_rowh = 0x98;
+    l->asg_x = 64;    l->asg_y = 187;  l->asg_rowh = 0x98;
     l->help_dx = 4416; l->help_dy = -2442;
-    l->port_dx = 0;    l->port_dy = 709;
+    l->port_dx = 120;  l->port_dy = 709;
     l->cat_x = -608;   l->cat_y = 1438;
     l->grid_x = 0;     l->grid_y = 1986; l->grid_pitch = 2662;
     l->grid_cols = 3;  l->grid_rows = 8;  l->grid_rowh = 0;
@@ -496,22 +496,25 @@ static void draw_set_screen(u32 task, int slot_mode)
     u32 AL = RD32(asg + 0x14);
     u32 s_rowh = RD32(AL + 0x28);
     if (l->asg_rowh) RD32(AL + 0x28) = l->asg_rowh;
-    /* ASSIGNED's dark panel (sheet widget+0x1c, sprite widget+0x28+1) has a fixed height; crop it
-     * (and its texture v range) by however much the rows were tightened, then restore */
-    u32 pdef = 0, pimg = 0, s_ph = 0, s_pv = 0;
+    /* ASSIGNED's inner dark panel and outer box (sheet widget+0x1c, sprites widget+0x28 and +1)
+     * have fixed heights; crop both (and their texture v ranges) by however much the rows were
+     * tightened, then restore */
+    u32 pdef[2] = {0, 0}, s_ph[2], s_pv[2];
     int orig_rowh = (int)s_rowh, nrow = (int)RD32(AL + 0x0c);
     if (l->asg_rowh && l->asg_rowh < orig_rowh) {
-        u32 psh = RD32(asg + 0x1c); int pix = (int)RD32(asg + 0x28) + 1;
-        pdef = f_sprdef(psh, pix);
-        pimg = RD32(psh + 0x10) + (u32)pix * 0x80;
-        s_ph = RD32(pdef + 0x10); s_pv = RD32(pdef + 0x5c);
+        u32 psh = RD32(asg + 0x1c);
         int cut = nrow * (orig_rowh - l->asg_rowh);
-        int vspan = (int)RD32(pimg + 0x60) - (int)RD32(pimg + 0x58);
-        RD32(pdef + 0x10) = (u32)((int)s_ph - cut);
-        RD32(pdef + 0x5c) = (u32)((int)s_pv - vspan * cut / (int)s_ph);
+        for (int k = 0; k < 2; k++) {
+            int pix = (int)RD32(asg + 0x28) + k;
+            u32 d = f_sprdef(psh, pix), img = RD32(psh + 0x10) + (u32)pix * 0x80;
+            pdef[k] = d; s_ph[k] = RD32(d + 0x10); s_pv[k] = RD32(d + 0x5c);
+            int vspan = (int)RD32(img + 0x60) - (int)RD32(img + 0x58);
+            RD32(d + 0x10) = (u32)((int)s_ph[k] - cut);
+            RD32(d + 0x5c) = (u32)((int)s_pv[k] - vspan * cut / (int)s_ph[k]);
+        }
     }
     if (!(l->skip & 0x200000)) f_widget(l->asg_x, l->asg_y, 0, asg, PRIO);
-    if (pdef) { RD32(pdef + 0x10) = s_ph; RD32(pdef + 0x5c) = s_pv; }
+    for (int k = 0; k < 2; k++) if (pdef[k]) { RD32(pdef[k] + 0x10) = s_ph[k]; RD32(pdef[k] + 0x5c) = s_pv[k]; }
     RD32(AL + 0x28) = s_rowh;
 
     if (!(l->skip & 16)) {
