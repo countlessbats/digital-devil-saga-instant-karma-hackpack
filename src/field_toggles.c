@@ -1,18 +1,23 @@
 /* Field toggles, active only while walking around (not in menus, battles or events):
  *   SubtleKarma: d-pad UP toggles random encounters, with a system sound and a message.
  *   SunKing:     d-pad DOWN switches solar noise between MAX and MIN.
+ *   TwoForOne:   SELECT cycles 1-for-1 .. 5-for-1 (tfo.c).
  * Both run from the field's player-control step (call to 0x1249e0 at 0x125980), which the game
  * only reaches while the player has control. */
 #include "game.h"
 
+int tfo_mode(void);
+void tfo_set_mode(int m);
+
 #define GP           0x003c0cf0u
-#define FEATURES     ((volatile u32 *)0x000FD200)   /* [2] SubtleKarma, [3] SunKing */
+#define FEATURES     ((volatile u32 *)0x000FD200)   /* [2] SubtleKarma, [3] SunKing, [4] TwoForOne */
 #define GBWK         RD32(0x003baa00u)
 #define BATTLE       RD32(GP - 0x5a0c)
 #define CAMP_STATE   RD8(0x003bc6b4u)
 #define RAW_HELD     (*(volatile u16 *)0x003f9b06u)  /* pad 0 raw buttons (d-pad only, no stick) */
 #define BTN_UP       0x1000
 #define BTN_DOWN     0x4000
+#define BTN_SELECT   0x0100
 
 #define f_field_ctl  ((u32 (*)(void))0x001249e0)
 #define f_se         ((void (*)(u32, int, int))0x002e8f78)
@@ -65,6 +70,18 @@ u32 field_hook(void)
         int full = RD8(GBWK + 0xa41) == 8;
         f_set_phase(full ? 0 : 8);
         f_se(full ? SE_ON : SE_OFF, 0x7f, 0x3f);
+    }
+    if (ok && FEATURES[4] && (edge & BTN_SELECT)) {       /* TwoForOne: cycle 1:1 .. 5:1 */
+        static const char *const names[5] = {
+            "1-for-1: normal encounters and rewards",
+            "2-for-1: 1/2 encounters, 2x rewards",
+            "3-for-1: 1/3 encounters, 3x rewards",
+            "4-for-1: 1/4 encounters, 4x rewards",
+            "5-for-1: 1/5 encounters, 5x rewards" };
+        int m = tfo_mode() % 5 + 1;
+        tfo_set_mode(m);
+        f_se(m == 1 ? SE_OFF : SE_ON, 0x7f, 0x3f);
+        show(names[m - 1]);
     }
     if (FEATURES[2] && enc_off) {
         /* the encounter roll adds walked distance into +0x1360 and bumps the danger counter at

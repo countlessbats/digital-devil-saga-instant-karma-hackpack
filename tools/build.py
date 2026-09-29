@@ -144,6 +144,7 @@ PATCH_BB = 'Good Karma - BattleButtons'
 PATCH_SK = 'Good Karma - SubtleKarma'
 PATCH_SUN = 'Good Karma - SunKing'
 PATCH_WT = 'Good Karma - WordTripper'
+PATCH_TFO = 'Good Karma - TwoForOne'
 ATLAS_ADDR = 0x000A0000
 
 def build(include_test=False):
@@ -208,6 +209,21 @@ def build(include_test=False):
         blob(lines)
         lines.append('patch=1,EE,%08X,word,00000001' % flag)
         hook(lines, 0x00125980, syms['field_hook'], 'field player-control step')
+    # ---- TwoForOne: SELECT on the field cycles 1:1..5:1 (fewer encounters, bigger rewards; bosses unchanged) ----
+    lines += ['', '[%s]' % PATCH_TFO, 'author=Good Karma v%s' % VERSION,
+              'description=SELECT on the field cycles 1-for-1 to 5-for-1: N times fewer random encounters, N times the '
+              'EXP, atma, macca and item drop chance (bosses unchanged).']
+    blob(lines)
+    lines.append('patch=1,EE,000FD210,word,00000001')            # FEATURES[4]: TwoForOne on
+    hook(lines, 0x00125980, syms['field_hook'], 'field player-control step')
+    for site in (0x00124D1C, 0x00124D48, 0x00216228):
+        hook(lines, site, syms['tfo_enc'], 'encounter accumulator step')
+    hook(lines, 0x001D0338, syms['tfo_kill_total'], 'per-enemy EXP/atma/macca totals')
+    hook(lines, 0x001D2680, syms['tfo_ep'], "killer's atma")
+    hook(lines, 0x001D26A8, syms['tfo_money'], "killer's macca")
+    for site in (0x001D1CCC, 0x001D2564):
+        hook(lines, site, syms['tfo_hunt_ep'], 'hunt atma bonus')
+    hook(lines, 0x001A44C4, syms['tfo_drop'], 'item drop roll')
     # ---- WordTripper: every glyph starts fading in at once (0x1955d8 reveal gate forced open) ----
     lines += ['', '[%s]' % PATCH_WT, 'author=Good Karma v%s' % VERSION,
               'description=Text appears all at once, fading in together instead of letter by letter.']

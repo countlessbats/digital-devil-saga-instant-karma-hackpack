@@ -41,6 +41,14 @@ On the field, **d-pad UP** toggles random encounters off and on, with a system s
 ### SunKing
 On the field, **d-pad DOWN** switches solar noise between MAX and MIN.
 
+### TwoForOne
+On the field, **SELECT** cycles 1-for-1 → 2-for-1 → … → 5-for-1 (with a sound and an on-screen message). At N-for-1:
+- random encounters come N times less often;
+- EXP, atma and macca from normal battles are multiplied by N, including the hunt bonus;
+- item drop chances are multiplied by N. Any chance above 100% becomes the chance of an extra drop (for example, a 30% item at 4-for-1 always drops once, with a 20% chance of a second).
+
+Boss battles are unchanged. The mode is stored in your save.
+
 ### WordTripper
 All text fades in at once instead of letter by letter.
 
@@ -57,7 +65,7 @@ Savestates made with a mod on keep that mod's code in memory; after changing whi
 With Python 3 from the repository:
 ```
 python tools/install.py "<PCSX2 data folder>"              # all mods
-python tools/install.py "<PCSX2 data folder>" --no-turbo   # skip a mod: --no-turbo / --no-set / --no-prey / --no-buttons / --no-subtle / --no-sun / --no-wordtripper
+python tools/install.py "<PCSX2 data folder>" --no-turbo   # skip a mod: --no-turbo / --no-set / --no-prey / --no-buttons / --no-subtle / --no-sun / --no-wordtripper / --no-twoforone
 ```
 This copies the patch file, enables the chosen mods and sets EE Cycle Rate 300% in the game's settings file (other settings are kept).
 
