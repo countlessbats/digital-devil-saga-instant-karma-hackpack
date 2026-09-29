@@ -41,10 +41,11 @@ typedef struct {
     u32 box_fill;                       /* translucent panel fill inside the box (0xRRGGBBAA, 0 = none) */
     int cat_crop_top, cat_crop_right;   /* trim the category pane backdrop (screen units) */
     int cat_crop_left;
-    int cat_label_dy;                   /* lower the category name label (and its ! marker) */
+    int cat_label_dy;
+    int cat_crop_bottom;                   /* lower the category name label (and its ! marker) */
 } Layout;
 
-#define LAY_MAGIC 0x4c415919
+#define LAY_MAGIC 0x4c41591a
 #define LAY ((volatile Layout *)0x000FF000)
 
 /* game functions */
@@ -117,7 +118,7 @@ static void layout_defaults(void)
     if (l->magic == LAY_MAGIC) return;
     /* ASSIGNED top-left, HELP top-right, status under HELP, tabs under ASSIGNED,
      * LEARNED as a 3x8 grid across the full width (px ~ units/12.8 across, /7.47 down) */
-    l->asg_x = 64;    l->asg_y = 209;  l->asg_rowh = 0x98;
+    l->asg_x = 64;    l->asg_y = 277;  l->asg_rowh = 0x98;
     l->help_dx = 4416; l->help_dy = -2442;
     l->port_dx = 120;  l->port_dy = 709;
     l->cat_x = -608;   l->cat_y = 1438;
@@ -144,7 +145,7 @@ static void layout_defaults(void)
     l->mark_dx = -0xb0; l->mark_dy = -0x38;
     l->arrow_dx = 0; l->row_lines = 1; l->row_line_dy = -16;
     l->box_fill = 0x00000030;
-    l->cat_crop_top = 20; l->cat_crop_right = 742; l->cat_crop_left = 666; l->cat_label_dy = 15;
+    l->cat_crop_top = 115; l->cat_crop_right = 755; l->cat_crop_left = 666; l->cat_label_dy = 15; l->cat_crop_bottom = 134;
     l->magic = LAY_MAGIC;
 }
 
@@ -422,17 +423,18 @@ static void draw_learned_side(u32 wa, u32 s1, u32 tab)
     f_tabsel(RD32(s1 + 0x20), tab);
     if (!(l->skip & 1)) {
         /* category pane backdrop = tab object sprite (obj+0x20 sheet, obj+0x24 index); crop top/right */
-        u32 to = RD32(s1 + 0x20), cd = 0, cs[7] = {0};
-        if (RD32(to + 0x20) && (l->cat_crop_top || l->cat_crop_right || l->cat_crop_left)) {
+        u32 to = RD32(s1 + 0x20), cd = 0, cs[8] = {0};
+        if (RD32(to + 0x20) && (l->cat_crop_top || l->cat_crop_right || l->cat_crop_left || l->cat_crop_bottom)) {
             u32 sh = RD32(to + 0x20); int ix = (int)RD32(to + 0x24);
             cd = f_sprdef(sh, ix);
             u32 img = RD32(sh + 0x10) + (u32)ix * 0x80;
             cs[0] = RD32(cd + 8); cs[1] = RD32(cd + 0xc); cs[2] = RD32(cd + 0x10);
-            cs[3] = RD32(cd + 0x54); cs[4] = RD32(cd + 0x58); cs[5] = RD32(cd + 4); cs[6] = RD32(cd + 0x50);
+            cs[3] = RD32(cd + 0x54); cs[4] = RD32(cd + 0x58); cs[5] = RD32(cd + 4); cs[6] = RD32(cd + 0x50); cs[7] = RD32(cd + 0x5c);
             int w = (int)cs[1], h = (int)cs[2];
             int us = (int)RD32(img + 0x5c) - (int)RD32(img + 0x54), vs = (int)RD32(img + 0x60) - (int)RD32(img + 0x58);
             RD32(cd + 8) = cs[0] + (u32)l->cat_crop_top;
-            RD32(cd + 0x10) = (u32)(h - l->cat_crop_top);
+            RD32(cd + 0x10) = (u32)(h - l->cat_crop_top - l->cat_crop_bottom);
+            RD32(cd + 0x5c) = cs[7] - (u32)(vs * l->cat_crop_bottom / h);
             RD32(cd + 0x54) = cs[3] + (u32)(vs * l->cat_crop_top / h);
             RD32(cd + 0xc) = (u32)(w - l->cat_crop_right - l->cat_crop_left);
             RD32(cd + 0x58) = cs[4] - (u32)(us * l->cat_crop_right / w);
@@ -443,7 +445,7 @@ static void draw_learned_side(u32 wa, u32 s1, u32 tab)
         RD32(to + 0x54) = s54 + (u32)l->cat_label_dy;
         f_tabrow(l->cat_x, l->cat_y, 0, to, PRIO);
         RD32(to + 0x54) = s54;
-        if (cd) { RD32(cd + 8) = cs[0]; RD32(cd + 0xc) = cs[1]; RD32(cd + 0x10) = cs[2]; RD32(cd + 0x54) = cs[3]; RD32(cd + 0x58) = cs[4]; RD32(cd + 4) = cs[5]; RD32(cd + 0x50) = cs[6]; }
+        if (cd) { RD32(cd + 8) = cs[0]; RD32(cd + 0xc) = cs[1]; RD32(cd + 0x10) = cs[2]; RD32(cd + 0x54) = cs[3]; RD32(cd + 0x58) = cs[4]; RD32(cd + 4) = cs[5]; RD32(cd + 0x50) = cs[6]; RD32(cd + 0x5c) = cs[7]; }
     }
     if (l->grid_cols <= 1 && !l->grid_rowh) f_widget(l->grid_x, l->grid_y, 0, W, PRIO);
     else if (!(l->skip & 0x400000)) draw_grid(W);
