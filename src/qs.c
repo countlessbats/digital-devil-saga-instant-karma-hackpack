@@ -78,9 +78,11 @@ static void press_x(void)
 }
 
 /* Replaces the main loop's pad processing call (0x103b10) at 0x1006a4. */
+void skip_frame(void);
 void qs_pad(void)
 {
     f_padproc();
+    skip_frame();
     if (!FEATURES[5] || al_phase == AL_OFF || al_phase == AL_DONE) return;
     if (++al_timer > 60 * 30) { al_phase = AL_OFF; return; }  /* give up after ~30 s: normal load list */
     switch (al_phase) {

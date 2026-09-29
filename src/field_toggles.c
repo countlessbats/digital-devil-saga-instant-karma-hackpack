@@ -53,8 +53,11 @@ static void draw_msg(void)
     f_textsubmit(t);
 }
 
+u32 field_control_frame;   /* logic frame of the last player-control step (read by SceneSkip) */
+
 u32 field_hook(void)
 {
+    field_control_frame = RD32(0x003ba700u);
     u16 held = RAW_HELD;
     u16 edge = held & ~prev_held;
     prev_held = held;

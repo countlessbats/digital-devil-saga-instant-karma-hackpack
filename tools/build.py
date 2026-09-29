@@ -146,6 +146,7 @@ PATCH_SUN = 'Good Karma - SunKing'
 PATCH_WT = 'Good Karma - WordTripper'
 PATCH_TFO = 'Good Karma - TwoForOne'
 PATCH_QS = 'Good Karma - QuickStart'
+PATCH_SKIP = 'Good Karma - SceneSkip'
 ATLAS_ADDR = 0x000A0000
 
 def build(include_test=False):
@@ -235,6 +236,15 @@ def build(include_test=False):
     lines.append('patch=1,EE,0026B11C,word,%08X' % (0x3C080000 | qhi))            # lui $t0, hi(qs_title)
     lines.append('patch=1,EE,0026B12C,word,%08X' % (0x25080000 | (qa & 0xffff)))  # addiu $t0, $t0, lo(qs_title)
     hook(lines, 0x001006A4, syms['qs_pad'], 'main loop pad processing (autoload presses)')
+    # ---- SceneSkip: START skips the whole cutscene (every segment made skippable; the rest fast-forwarded) ----
+    lines += ['', '[%s]' % PATCH_SKIP, 'author=Good Karma v%s' % VERSION,
+              'description=START during a cutscene skips the whole scene, including scenes the game normally '
+              'refuses to skip (fast-forwards the parts in between with Native Turbo on).']
+    blob(lines)
+    lines.append('patch=1,EE,000FD218,word,00000001')            # FEATURES[6]: SceneSkip on
+    lines.append('patch=1,EE,0022F2F4,word,24020000')            # 'cannot be skipped' check -> skippable
+    hook(lines, 0x001006A4, syms['qs_pad'], 'main loop pad processing (shared with QuickStart)')
+    hook(lines, 0x00125980, syms['field_hook'], 'field player-control step (tells SceneSkip the player has control)')
     # ---- WordTripper: every glyph starts fading in at once (0x1955d8 reveal gate forced open) ----
     lines += ['', '[%s]' % PATCH_WT, 'author=Good Karma v%s' % VERSION,
               'description=Text appears all at once, fading in together instead of letter by letter.']
