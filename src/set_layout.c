@@ -45,7 +45,7 @@ typedef struct {
     int cat_crop_bottom;                   /* lower the category name label (and its ! marker) */
 } Layout;
 
-#define LAY_MAGIC 0x4c41591b
+#define LAY_MAGIC 0x4c41591c
 #define LAY ((volatile Layout *)0x000FF000)
 
 /* game functions */
@@ -118,7 +118,7 @@ static void layout_defaults(void)
     if (l->magic == LAY_MAGIC) return;
     /* ASSIGNED top-left, HELP top-right, status under HELP, tabs under ASSIGNED,
      * LEARNED as a 3x8 grid across the full width (px ~ units/12.8 across, /7.47 down) */
-    l->asg_x = 64;    l->asg_y = 277;  l->asg_rowh = 0x98;
+    l->asg_x = 64;    l->asg_y = 255;  l->asg_rowh = 0x98;
     l->help_dx = 4416; l->help_dy = -2442;
     l->port_dx = 120;  l->port_dy = 709;
     l->cat_x = -608;   l->cat_y = 1453;
