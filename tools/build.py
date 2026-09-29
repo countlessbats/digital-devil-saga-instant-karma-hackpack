@@ -5,7 +5,7 @@ Writes build/D7273511.pnach; --install copies it into each given PCSX2 patches d
 """
 import os, sys, struct, shutil, keystone
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import cbuild
+import cbuild, atlas
 
 ROOT = os.path.join(os.path.dirname(__file__), '..')
 VERSION = open(os.path.join(ROOT, 'VERSION')).read().strip()
@@ -139,8 +139,10 @@ def jal(target):
 PNACH = 'SLUS-20974_D7273511.pnach'
 PATCH_TURBO = 'Good Karma - Native Turbo'
 PATCH_SET = 'Good Karma - SET Screen'
+PATCH_PREY = 'Good Karma - Prey Eyes'
+ATLAS_ADDR = 0x000A0000
 
-def build():
+def build(include_test=False):
     lines = ['gametitle=Shin Megami Tensei: Digital Devil Saga (USA) [SLUS-20974] (D7273511)', '',
              '[%s]' % PATCH_TURBO,
              'author=Good Karma v%s' % VERSION,
@@ -150,21 +152,41 @@ def build():
     for i, w in enumerate(words):
         lines.append('patch=1,EE,%08X,word,%08X' % (TURBO_CODE + 4 * i, w))
     lines.append('patch=1,EE,%08X,word,%08X' % (HOOK_SITE, jal(TURBO_CODE)))
-    # ---- C mods (src/*.c) ----
-    segs, syms = cbuild.build()
+    # ---- C mods (src/*.c): the code blob is emitted in every section that uses it ----
+    segs, syms = cbuild.build(include_test)
+    def blob(dst):
+        for addr, data in segs:
+            data = data + b'\0' * (-len(data) % 4)
+            for i in range(0, len(data), 4):
+                dst.append('patch=1,EE,%08X,word,%08X' % (addr + i, struct.unpack_from('<I', data, i)[0]))
+    def hook(dst, site, target, comment, is_jal=True):
+        dst.append('patch=1,EE,%08X,word,%08X' % (site, jal(target) if is_jal else target))
     lines += ['', '[%s]' % PATCH_SET,
               'author=Good Karma v%s' % VERSION,
               'description=Skill SET screen: 3-column LEARNED grid (d-pad wraps, L2/R2 change tab), '
               'START sorts Game/Cost/A-Z, relaid-out panels.']
-    for addr, data in segs:
-        data = data + b'\0' * (-len(data) % 4)
-        for i in range(0, len(data), 4):
-            lines.append('patch=1,EE,%08X,word,%08X' % (addr + i, struct.unpack_from('<I', data, i)[0]))
-    lines.append('patch=1,EE,%08X,word,%08X' % (0x0027862C, jal(syms['set_finalize'])))  # builder finalize call
-    lines.append('patch=1,EE,%08X,word,%08X' % (0x0037CC9C, syms['set_logic']))           # SET logic task table
-    lines.append('patch=1,EE,%08X,word,%08X' % (0x0037CCA0, syms['set_draw']))            # SET draw task table
-    lines.append('patch=1,EE,%08X,word,%08X' % (0x0037CC68, syms['set_draw_slot']))       # SET slot-select draw
-    lines.append('patch=1,EE,%08X,word,%08X' % (0x00278020, jal(syms['costfn_copy'])))    # LEARNED cost/unit drawer
+    blob(lines)
+    hook(lines, 0x0027862C, syms['set_finalize'], 'builder finalize call')
+    hook(lines, 0x0037CC9C, syms['set_logic'], 'SET logic task table', False)
+    hook(lines, 0x0037CCA0, syms['set_draw'], 'SET draw task table', False)
+    hook(lines, 0x0037CC68, syms['set_draw_slot'], 'SET slot-select draw', False)
+    hook(lines, 0x00278020, syms['costfn_copy'], 'LEARNED cost/unit drawer')
+    # ---- Prey Eyes ----
+    lines += ['', '[%s]' % PATCH_PREY,
+              'author=Good Karma v%s' % VERSION,
+              'description=Battle info: reticle shows the skill result on each target (green good, red bad, '
+              '? unknown), affinity board for the targeted enemy, buff/debuff icons. Affinities are learned by using them.']
+    ab = open(os.path.join(ROOT, 'build', 'prey_atlas.bin'), 'rb').read()
+    ab += b'\0' * (-len(ab) % 4)
+    for i in range(0, len(ab), 4):
+        lines.append('patch=1,EE,%08X,word,%08X' % (ATLAS_ADDR + i, struct.unpack_from('<I', ab, i)[0]))
+    blob(lines)
+    hook(lines, 0x001C1100, syms['prey_reticle'], 'per-target reticle draw')
+    hook(lines, 0x001C00EC, syms['prey_ring'], 'reticle ring sprite draw')
+    hook(lines, 0x001B6E84, syms['prey_party_panel'], 'party panel per-member draw')
+    hook(lines, 0x001A1158, syms['prey_battle_exit'], 'btlExit teardown call')
+    hook(lines, 0x001C13A0, syms['prey_target_input'], 'target panel input')
+    build.syms = syms
     return '\n'.join(lines) + '\n', words
 
 if __name__ == '__main__':

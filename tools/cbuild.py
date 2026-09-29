@@ -9,14 +9,17 @@ CFLAGS = ['-target', 'mips64el-freestanding-gnuabin32', '-mcpu=mips3', '-O2', '-
           '-Xclang', '-target-feature', '-Xclang', '+noabicalls', '-G0', '-ffreestanding', '-fno-builtin', '-nostdlib',
           '-fno-stack-protector', '-fno-unwind-tables', '-fno-asynchronous-unwind-tables', '-Wall']
 
-def build():
+def build(include_test=False):
+    import atlas; atlas.main()          # regenerates src/prey_atlas.h
     out = os.path.join(ROOT, 'build', 'obj'); os.makedirs(out, exist_ok=True)
     objs = []
-    for c in sorted(glob.glob(os.path.join(ROOT, 'src', '*.c'))):
+    srcs = sorted(glob.glob(os.path.join(ROOT, 'src', '*.c')))
+    if include_test: srcs += sorted(glob.glob(os.path.join(ROOT, 'src', 'test', '*.c')))
+    for c in srcs:
         o = os.path.join(out, os.path.basename(c)[:-2] + '.o')
         subprocess.run([ZIG, 'cc', *CFLAGS, '-c', c, '-o', o], check=True)
         objs.append(o)
-    elf = os.path.join(out, 'mods.elf')
+    elf = os.path.join(out, 'mods_test.elf' if include_test else 'mods.elf')
     subprocess.run([ZIG, 'ld.lld', '-m', 'elf32ltsmipn32', '-T', os.path.join(ROOT, 'src', 'mods.ld'),
                     '--no-relax', '-o', elf, *objs], check=True)
     f = ELFFile(open(elf, 'rb'))
