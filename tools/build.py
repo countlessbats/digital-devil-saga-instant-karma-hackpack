@@ -136,18 +136,26 @@ def asm(src, addr):
 def jal(target):
     return 0x0C000000 | ((target >> 2) & 0x03FFFFFF)
 
+PNACH = 'SLUS-20974_D7273511.pnach'
+PATCH_TURBO = 'Good Karma - Native Turbo'
+PATCH_SET = 'Good Karma - SET Screen'
+
 def build():
-    lines = ['gametitle=Shin Megami Tensei: Digital Devil Saga (USA) [SLUS-20974] (D7273511)',
-             'comment=DDS1 mods v%s' % VERSION, '',
-             '// Native turbo: hold L2 = 3x, hold R2 = 6x, L3/R3 toggle 3x/6x (off in main menu)']
+    lines = ['gametitle=Shin Megami Tensei: Digital Devil Saga (USA) [SLUS-20974] (D7273511)', '',
+             '[%s]' % PATCH_TURBO,
+             'author=Good Karma v%s' % VERSION,
+             'description=Hold L2 = 3x, hold R2 = 6x, L3/R3 toggle 3x/6x. Off in the main menu. '
+             'Music stays normal speed. 6x needs EE Cycle Rate 300%.']
     words = asm(TURBO_ASM, TURBO_CODE)
     for i, w in enumerate(words):
         lines.append('patch=1,EE,%08X,word,%08X' % (TURBO_CODE + 4 * i, w))
     lines.append('patch=1,EE,%08X,word,%08X' % (HOOK_SITE, jal(TURBO_CODE)))
     # ---- C mods (src/*.c) ----
     segs, syms = cbuild.build()
-    lines.append('')
-    lines.append('// SET menu: START cycles LEARNED sort (Game / Cost / A-Z)')
+    lines += ['', '[%s]' % PATCH_SET,
+              'author=Good Karma v%s' % VERSION,
+              'description=Skill SET screen: 3-column LEARNED grid (d-pad wraps, L2/R2 change tab), '
+              'START sorts Game/Cost/A-Z, relaid-out panels.']
     for addr, data in segs:
         data = data + b'\0' * (-len(data) % 4)
         for i in range(0, len(data), 4):
@@ -162,12 +170,12 @@ def build():
 if __name__ == '__main__':
     text, words = build()
     os.makedirs(os.path.join(ROOT, 'build'), exist_ok=True)
-    out = os.path.join(ROOT, 'build', 'D7273511.pnach')
+    out = os.path.join(ROOT, 'build', PNACH)
     open(out, 'w').write(text)
     print('v%s: %d words of turbo code -> %s' % (VERSION, len(words), out))
     args = sys.argv[1:]
     while args:
         if args[0] == '--install':
-            shutil.copy(out, os.path.join(args[1], 'D7273511.pnach')); print('installed ->', args[1]); args = args[2:]
+            shutil.copy(out, os.path.join(args[1], PNACH)); print('installed ->', args[1]); args = args[2:]
         else:
             raise SystemExit('unknown arg ' + args[0])

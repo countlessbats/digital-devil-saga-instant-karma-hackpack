@@ -34,9 +34,9 @@ INJ_ASM = """
 if __name__ == '__main__':
     dest = sys.argv[1] if len(sys.argv) > 1 else r'<local path>'
     text, _ = build.build()
-    lines = [text, '// TEST ONLY: pad injection']
+    lines = [text, '[Test Only - Pad Injection]']
     for i, w in enumerate(build.asm(INJ_ASM, INJ_CODE)):
         lines.append('patch=1,EE,%08X,word,%08X' % (INJ_CODE + 4 * i, w))
     lines.append('patch=1,EE,%08X,word,%08X' % (INJ_SITE, build.jal(INJ_CODE)))
-    open(os.path.join(dest, 'D7273511.pnach'), 'w').write('\n'.join(lines) + '\n')
+    open(os.path.join(dest, build.PNACH), 'w').write('\n'.join(lines) + '\n')
     print('test pnach ->', dest)
