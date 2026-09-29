@@ -10,10 +10,10 @@ Runs the game's own logic faster, instead of fast-forwarding the emulator, so mu
 
 | Button | Effect |
 |---|---|
-| Hold L2 | 3x speed |
-| Hold R2 | 6x speed |
-| L3 | Toggle 3x on/off |
-| R3 | Toggle 6x on/off |
+| Hold R2 | 3x speed |
+| Hold L2 | 6x speed |
+| R3 | Toggle 3x on/off |
+| L3 | Toggle 6x on/off |
 
 Turbo is off while the main menu is open; a toggle stays remembered and resumes when you close it.
 6x needs **EE Cycle Rate 300%** for this game (the installer sets it; see below to set it by hand). Without it, 6x tops out around 4x.

@@ -1,8 +1,8 @@
 gametitle=Shin Megami Tensei: Digital Devil Saga (USA) [SLUS-20974] (D7273511)
 
 [Good Karma - Native Turbo]
-author=Good Karma v0.7.7
-description=Hold L2 = 3x, hold R2 = 6x, L3/R3 toggle 3x/6x. Off in the main menu. Music stays normal speed. 6x needs EE Cycle Rate 300%.
+author=Good Karma v0.7.8
+description=Hold R2 = 3x, hold L2 = 6x, R3/L3 toggle 3x/6x. Off in the main menu. Music stays normal speed. 6x needs EE Cycle Rate 300%.
 patch=1,EE,000F0020,word,27BDFFE0
 patch=1,EE,000F0024,word,FFBF0000
 patch=1,EE,000F0028,word,FFB00008
@@ -19,14 +19,14 @@ patch=1,EE,000F0050,word,00000000
 patch=1,EE,000F0054,word,01095026
 patch=1,EE,000F0058,word,01485024
 patch=1,EE,000F005C,word,922B0000
-patch=1,EE,000F0060,word,314C0200
+patch=1,EE,000F0060,word,314C0400
 patch=1,EE,000F0064,word,11800005
 patch=1,EE,000F0068,word,240D0003
 patch=1,EE,000F006C,word,156D0002
 patch=1,EE,000F0070,word,00000000
 patch=1,EE,000F0074,word,240D0000
 patch=1,EE,000F0078,word,01A05825
-patch=1,EE,000F007C,word,314C0400
+patch=1,EE,000F007C,word,314C0200
 patch=1,EE,000F0080,word,11800005
 patch=1,EE,000F0084,word,240D0006
 patch=1,EE,000F0088,word,156D0002
@@ -35,11 +35,11 @@ patch=1,EE,000F0090,word,240D0000
 patch=1,EE,000F0094,word,01A05825
 patch=1,EE,000F0098,word,A22B0000
 patch=1,EE,000F009C,word,01608025
-patch=1,EE,000F00A0,word,310C0001
+patch=1,EE,000F00A0,word,310C0002
 patch=1,EE,000F00A4,word,11800002
 patch=1,EE,000F00A8,word,00000000
 patch=1,EE,000F00AC,word,24100003
-patch=1,EE,000F00B0,word,310C0002
+patch=1,EE,000F00B0,word,310C0001
 patch=1,EE,000F00B4,word,11800002
 patch=1,EE,000F00B8,word,00000000
 patch=1,EE,000F00BC,word,24100006
@@ -95,7 +95,7 @@ patch=1,EE,000F0180,word,27BD0020
 patch=1,EE,001006AC,word,0C03C008
 
 [Good Karma - SET Screen]
-author=Good Karma v0.7.7
+author=Good Karma v0.7.8
 description=Skill SET screen: 3-column LEARNED grid (d-pad wraps, L2/R2 change tab), START sorts Game/Cost/A-Z, relaid-out panels.
 patch=1,EE,000C0000,word,27BDFFB0
 patch=1,EE,000C0004,word,FFBF0048
@@ -8224,7 +8224,7 @@ patch=1,EE,0037CC68,word,000C5E18
 patch=1,EE,00278020,word,0C0392FC
 
 [Good Karma - Prey Eyes]
-author=Good Karma v0.7.7
+author=Good Karma v0.7.8
 description=Battle info: reticle shows the skill result on each target (green good, red bad, ? unknown), affinity board for the targeted enemy, buff/debuff icons. Affinities are learned by using them.
 patch=1,EE,000A0000,word,00000000
 patch=1,EE,000A0004,word,00000000
@@ -33012,7 +33012,7 @@ patch=1,EE,000FD200,word,00000001
 patch=1,EE,001C13A0,word,0C0300FA
 
 [Good Karma - BattleButtons]
-author=Good Karma v0.7.7
+author=Good Karma v0.7.8
 description=Battle command menu: R1 passes and L1 retreats instantly; the right stick jumps a page.
 patch=1,EE,000C0000,word,27BDFFB0
 patch=1,EE,000C0004,word,FFBF0048
@@ -41139,7 +41139,7 @@ patch=1,EE,001BF134,word,0C030000
 patch=1,EE,001C13A0,word,0C0300FA
 
 [Good Karma - SubtleKarma]
-author=Good Karma v0.7.7
+author=Good Karma v0.7.8
 description=Field: d-pad UP toggles random encounters on/off (with sound and message).
 patch=1,EE,000C0000,word,27BDFFB0
 patch=1,EE,000C0004,word,FFBF0048
@@ -49265,7 +49265,7 @@ patch=1,EE,000FD208,word,00000001
 patch=1,EE,00125980,word,0C03011C
 
 [Good Karma - SunKing]
-author=Good Karma v0.7.7
+author=Good Karma v0.7.8
 description=Field: d-pad DOWN switches solar noise between MAX and MIN.
 patch=1,EE,000C0000,word,27BDFFB0
 patch=1,EE,000C0004,word,FFBF0048
@@ -57391,7 +57391,7 @@ patch=1,EE,000FD20C,word,00000001
 patch=1,EE,00125980,word,0C03011C
 
 [Good Karma - TwoForOne]
-author=Good Karma v0.7.7
+author=Good Karma v0.7.8
 description=SELECT on the field cycles 1-for-1 to 5-for-1: N times fewer random encounters, N times the EXP, atma, macca and item drop chance (bosses unchanged).
 patch=1,EE,000C0000,word,27BDFFB0
 patch=1,EE,000C0004,word,FFBF0048
@@ -65526,7 +65526,7 @@ patch=1,EE,001D2564,word,0C031CAA
 patch=1,EE,001A44C4,word,0C031CDE
 
 [Good Karma - QuickStart]
-author=Good Karma v0.7.7
+author=Good Karma v0.7.8
 description=Any button during the logos/intro skips straight to the main menu. START instead loads your most recent save.
 patch=1,EE,000C0000,word,27BDFFB0
 patch=1,EE,000C0004,word,FFBF0048
@@ -73654,7 +73654,7 @@ patch=1,EE,0026B12C,word,25083520
 patch=1,EE,001006A4,word,0C030B80
 
 [Good Karma - SceneSkip]
-author=Good Karma v0.7.7
+author=Good Karma v0.7.8
 description=START during a cutscene skips the whole scene, including scenes the game normally refuses to skip (fast-forwards the parts in between with Native Turbo on).
 patch=1,EE,000C0000,word,27BDFFB0
 patch=1,EE,000C0004,word,FFBF0048
@@ -81782,7 +81782,7 @@ patch=1,EE,001006A4,word,0C030B80
 patch=1,EE,00125980,word,0C03011C
 
 [Good Karma - WordTripper]
-author=Good Karma v0.7.7
+author=Good Karma v0.7.8
 description=Text appears all at once, fading in together instead of letter by letter.
 patch=1,EE,00195664,word,00000000
 patch=1,EE,0019566C,word,0000102D
