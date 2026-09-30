@@ -2,3 +2,4 @@ extracted/
 work/
 __pycache__/
 build/obj/
+dist/

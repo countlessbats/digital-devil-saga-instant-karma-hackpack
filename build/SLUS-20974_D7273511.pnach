@@ -1,7 +1,7 @@
 gametitle=Shin Megami Tensei: Digital Devil Saga (USA) [SLUS-20974] (D7273511)
 
 [Good Karma - Native Turbo]
-author=Good Karma v0.7.14
+author=Good Karma v0.7.15
 description=Hold R2 = 3x, hold L2 = 6x, R3/L3 toggle 3x/6x. Off in the main menu. Music stays normal speed. 6x needs EE Cycle Rate 300%.
 patch=1,EE,000F0020,word,27BDFFE0
 patch=1,EE,000F0024,word,FFBF0000
@@ -95,7 +95,7 @@ patch=1,EE,000F0180,word,27BD0020
 patch=1,EE,001006AC,word,0C03C008
 
 [Good Karma - SET Screen]
-author=Good Karma v0.7.14
+author=Good Karma v0.7.15
 description=Skill SET screen: 3-column LEARNED grid (d-pad wraps, L2/R2 change tab), START sorts Game/Cost/A-Z, relaid-out panels.
 patch=1,EE,000C0000,word,27BDFFB0
 patch=1,EE,000C0004,word,FFBF0048
@@ -9168,7 +9168,7 @@ patch=1,EE,0037CC68,word,000C61C8
 patch=1,EE,00278020,word,0C0392F8
 
 [Good Karma - Prey Eyes]
-author=Good Karma v0.7.14
+author=Good Karma v0.7.15
 description=Battle info: reticle shows the skill result on each target (green good, red bad, ? unknown), affinity board for the targeted enemy, buff/debuff icons. Affinities are learned by using them.
 patch=1,EE,000A0000,word,00000000
 patch=1,EE,000A0004,word,00000000
@@ -34900,7 +34900,7 @@ patch=1,EE,000FD200,word,00000001
 patch=1,EE,001C13A0,word,0C0300FA
 
 [Good Karma - BattleButtons]
-author=Good Karma v0.7.14
+author=Good Karma v0.7.15
 description=Battle command menu: R1 passes and L1 retreats instantly; the right stick jumps a page.
 patch=1,EE,000C0000,word,27BDFFB0
 patch=1,EE,000C0004,word,FFBF0048
@@ -43971,7 +43971,7 @@ patch=1,EE,001BF134,word,0C030000
 patch=1,EE,001C13A0,word,0C0300FA
 
 [Good Karma - SubtleKarma]
-author=Good Karma v0.7.14
+author=Good Karma v0.7.15
 description=Field: d-pad UP toggles random encounters on/off (with sound and message).
 patch=1,EE,000C0000,word,27BDFFB0
 patch=1,EE,000C0004,word,FFBF0048
@@ -53041,7 +53041,7 @@ patch=1,EE,000FD208,word,00000001
 patch=1,EE,00125980,word,0C0301E8
 
 [Good Karma - SunKing]
-author=Good Karma v0.7.14
+author=Good Karma v0.7.15
 description=Field: d-pad DOWN switches solar noise between MAX and MIN.
 patch=1,EE,000C0000,word,27BDFFB0
 patch=1,EE,000C0004,word,FFBF0048
@@ -62111,7 +62111,7 @@ patch=1,EE,000FD20C,word,00000001
 patch=1,EE,00125980,word,0C0301E8
 
 [Good Karma - TwoForOne]
-author=Good Karma v0.7.14
+author=Good Karma v0.7.15
 description=SELECT on the field cycles 1-for-1 to 5-for-1: N times fewer random encounters, N times the EXP, atma, macca and item drop chance (bosses unchanged).
 patch=1,EE,000C0000,word,27BDFFB0
 patch=1,EE,000C0004,word,FFBF0048
@@ -71190,7 +71190,7 @@ patch=1,EE,001D2564,word,0C031DCE
 patch=1,EE,001A44C4,word,0C031E02
 
 [Good Karma - QuickStart]
-author=Good Karma v0.7.14
+author=Good Karma v0.7.15
 description=Any button during the logos/intro skips straight to the main menu. START instead loads your most recent save.
 patch=1,EE,000C0000,word,27BDFFB0
 patch=1,EE,000C0004,word,FFBF0048
@@ -80263,7 +80263,7 @@ patch=1,EE,001006A4,word,0C030C4C
 patch=1,EE,00125980,word,0C0301E8
 
 [Good Karma - SceneSkip]
-author=Good Karma v0.7.14
+author=Good Karma v0.7.15
 description=START during a cutscene skips the whole scene, including scenes the game normally refuses to skip (fast-forwards the parts in between with Native Turbo on).
 patch=1,EE,000C0000,word,27BDFFB0
 patch=1,EE,000C0004,word,FFBF0048
@@ -89335,7 +89335,7 @@ patch=1,EE,001006A4,word,0C030C4C
 patch=1,EE,00125980,word,0C0301E8
 
 [Good Karma - OpenChests]
-author=Good Karma v0.7.14
+author=Good Karma v0.7.15
 description=Inspecting a chest opens it straight away: the "Touch it?" question and Yes/No are answered inside the script, never shown. The "Obtained" message stays so you see what you got.
 patch=1,EE,000C0000,word,27BDFFB0
 patch=1,EE,000C0004,word,FFBF0048
@@ -98407,7 +98407,7 @@ patch=1,EE,0039E2A0,word,000C06C8
 patch=1,EE,0039E2F8,word,000C0658
 
 [Good Karma - WordTripper]
-author=Good Karma v0.7.14
+author=Good Karma v0.7.15
 description=Text appears all at once, fading in together instead of letter by letter.
 patch=1,EE,00195664,word,00000000
 patch=1,EE,0019566C,word,0000102D
