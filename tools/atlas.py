@@ -66,30 +66,6 @@ def earth_glyph(d, S):
     d.polygon([(c + 30, c - 30), (c + 42, c - 12), (c + 18, c - 12)], fill=(240, 220, 190, 255))
 
 
-def buff_icon(stat, up, level, size=20):
-    """Box + stat glyph (icons.stat_glyph) + 1..4 arrows."""
-    col = (190, 255, 60, 255) if up else (252, 70, 104, 255)
-    glyph_col = (210, 255, 110) if up else (255, 144, 162)
-    S = 36
-    im = Image.new('RGBA', (S, S), (0, 0, 0, 255))
-    d = ImageDraw.Draw(im)
-    d.rectangle((0, 0, S - 1, S - 1), outline=col, width=2)
-    im.alpha_composite(icons.stat_glyph(stat, glyph_col + (255,)), (3, 3))
-    # arrows: stacked in the right half
-    ax, aw = 21, 11
-    n = level
-    step = 26 // max(n, 1)
-    total = step * (n - 1) + 7
-    y0 = (S - total) // 2
-    for i in range(n):
-        y = y0 + i * step
-        if up:
-            d.polygon([(ax, y + 7), (ax + aw // 2, y), (ax + aw, y + 7)], fill=col)
-        else:
-            d.polygon([(ax, y), (ax + aw // 2, y + 7), (ax + aw, y)], fill=col)
-    return im.resize((size, size), Image.LANCZOS)
-
-
 def sprites():
     out = []   # (name, image)
     for n in ('phys', 'gun', 'fire', 'ice', 'elec', 'force', 'earth', 'expel', 'death'):
@@ -104,7 +80,7 @@ def sprites():
     for stat in ('att', 'mag', 'def', 'acc'):
         for up in (1, 0):
             for lv in range(1, 5):
-                out.append(('BUFF_%s_%s%d' % (stat.upper(), 'UP' if up else 'DN', lv), buff_icon(stat, up, lv)))
+                out.append(('BUFF_%s_%s%d' % (stat.upper(), 'UP' if up else 'DN', lv), icons.buff_icon(stat, up, lv, 20)))
     # solid white square for tinted panels/lines
     out.append(('WHITE', Image.new('RGBA', (8, 8), (255, 255, 255, 255))))
     return out

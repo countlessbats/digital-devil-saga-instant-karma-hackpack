@@ -190,6 +190,24 @@ def ailment(name):
         col = (255, 150, 40, 255)
         for i, r in enumerate((96, 66, 36)):
             d.arc((C - r, C - r, C + r, C + r), 40 + i * 120, 330 + i * 120, fill=col, width=22)
+    elif name == 'curse':            # evil eye
+        col = (190, 70, 230, 255)
+        d.polygon([(20, C), (C, 60), (S - 20, C), (C, S - 60)], fill=col)
+        d.polygon([(52, C), (C, 84), (S - 52, C), (C, S - 84)], fill=(30, 6, 40, 255))
+        d.ellipse((C - 30, C - 30, C + 30, C + 30), fill=(255, 70, 110, 255))
+        d.ellipse((C - 10, C - 22, C + 10, C + 22), fill=(20, 0, 20, 255))
+    elif name == 'nerve':            # jagged nerve spark
+        col = (250, 230, 60, 255)
+        d.line([(28, 150), (86, 96), (116, 170), (160, 70), (190, 132), (228, 100)], fill=col, width=26, joint='curve')
+        for x, y in ((86, 96), (160, 70)):
+            d.ellipse((x - 20, y - 20, x + 20, y + 20), fill=col)
+    elif name == 'mind':             # brain
+        pink, dark = (255, 140, 190, 255), (150, 50, 100, 255)
+        d.ellipse((30, 56, 142, 200), fill=pink); d.ellipse((114, 56, 226, 200), fill=pink)
+        d.ellipse((60, 36, 196, 150), fill=pink)
+        d.line([(C, 44), (C, 196)], fill=dark, width=10)
+        for (x0, y0, x1, y1) in ((52, 100, 108, 130), (60, 150, 112, 160), (148, 100, 204, 130), (144, 160, 196, 150)):
+            d.line([(x0, y0), (x1, y1)], fill=dark, width=9)
     elif name == 'sleep':
         col = (120, 170, 255, 255)
         for (x, y, s) in ((34, 116, 104), (150, 36, 70)):
@@ -217,6 +235,86 @@ def stat_glyph(stat, col):
     elif stat == 'acc':      # target
         d.ellipse((4, 34, 56, 86), outline=col, width=8); d.ellipse((20, 50, 40, 70), fill=col)
     return im.resize((15, 30), Image.LANCZOS)
+
+
+def buff_icon(stat, up, level, size=36):
+    """36 px buff-stage icon: direction-coloured frame, stat glyph, 1..4 arrows (up) or down-arrows."""
+    col = (190, 255, 60, 255) if up else (252, 70, 104, 255)
+    glyph_col = (210, 255, 110) if up else (255, 144, 162)
+    B = 36
+    im = Image.new('RGBA', (B, B), (0, 0, 0, 255))
+    d = ImageDraw.Draw(im)
+    d.rectangle((0, 0, B - 1, B - 1), outline=col, width=2)
+    im.alpha_composite(stat_glyph(stat, glyph_col + (255,)), (3, 3))
+    ax, aw = 21, 11
+    step = 26 // max(level, 1)
+    total = step * (level - 1) + 7
+    y0 = (B - total) // 2
+    for i in range(level):
+        y = y0 + i * step
+        if up:
+            d.polygon([(ax, y + 7), (ax + aw // 2, y), (ax + aw, y + 7)], fill=col)
+        else:
+            d.polygon([(ax, y), (ax + aw // 2, y + 7), (ax + aw, y)], fill=col)
+    return im if size == B else im.resize((size, size), Image.LANCZOS)
+
+
+def reticle_ring(w=184, h=180, rot=22.0):
+    """White targeting ring: four soft points (concave sides) around an octagonal opening, shaded band."""
+    Z = 4 * max(w, h)
+    c = Z / 2
+    def outline(scale):
+        pts = []
+        for i in range(360):
+            t = math.radians(i)
+            r = Z * scale * (0.36 + 0.135 * (1 - abs(math.sin(2 * (t - math.radians(rot))))) ** 2.8)
+            pts.append((c + r * math.cos(t), c + r * math.sin(t)))
+        return pts
+    inner = [(c + Z * 0.255 * math.cos(math.radians(rot + 22.5 + k * 45)), c + Z * 0.255 * math.sin(math.radians(rot + 22.5 + k * 45))) for k in range(8)]
+    im = Image.new('RGBA', (Z, Z), (0, 0, 0, 0)); d = ImageDraw.Draw(im)
+    d.polygon(outline(1.0), fill=(70, 70, 80, 150))                        # soft dark rim
+    d.polygon(outline(0.955), fill=(215, 215, 222, 255))                   # band
+    d.polygon(outline(0.90), fill=(250, 250, 252, 255))                    # brighter core of the band
+    d.polygon([(c + (x - c) * 1.12, c + (y - c) * 1.12) for x, y in inner], fill=(200, 200, 208, 255))
+    d.polygon([(c + (x - c) * 1.05, c + (y - c) * 1.05) for x, y in inner], fill=(70, 70, 80, 150))
+    d.polygon(inner, fill=(0, 0, 0, 0))
+    im = im.filter(ImageFilter.GaussianBlur(Z / 300))
+    return im.resize((w, h), Image.LANCZOS)
+
+
+def board_banner(w=236, h=74):
+    """Dark navy backdrop bar: most opaque in the middle, fading towards every edge."""
+    im = Image.new('RGBA', (w, h))
+    px = im.load()
+    for y in range(h):
+        fy = 1 - abs((y + 0.5) / h * 2 - 1) ** 3
+        for x in range(w):
+            fx = 1 - abs((x + 0.5) / w * 2 - 1) ** 4
+            px[x, y] = (8, 8, 22, int(60 + 150 * fx * fy))
+    return im
+
+
+RING_COL = {'resist': (250, 214, 40), 'null': (235, 40, 40), 'reflect': (235, 40, 40), 'drain': (235, 40, 40),
+            'weak': (60, 235, 45)}
+
+
+def round_badge(kind, size=128):
+    """Round reticle-result badge: dark centre fading to a bright rim in the result colour, glyph in the middle."""
+    col = RING_COL[kind]
+    Z = 512
+    im = Image.new('RGBA', (Z, Z), (0, 0, 0, 0)); px = im.load()
+    cc = (Z - 1) / 2; R = Z / 2 - 2
+    for y in range(Z):
+        for x in range(Z):
+            r = math.hypot(x - cc, y - cc) / R
+            if r > 1:
+                continue
+            t = max(0.0, (r - 0.45) / 0.55) ** 2
+            edge = min(1.0, (1 - r) * R / 3)
+            px[x, y] = (int(col[0] * t + 8 * (1 - t)), int(col[1] * t + 10 * (1 - t)), int(col[2] * t + 8 * (1 - t)), int(255 * edge))
+    g = glyph(kind, col + (255,)).resize((300, 300), Image.LANCZOS)
+    im.alpha_composite(g, ((Z - 300) // 2, (Z - 300) // 2))
+    return im.resize((size, size), Image.LANCZOS)
 
 
 def sheet(path):
