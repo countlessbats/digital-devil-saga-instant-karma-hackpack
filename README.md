@@ -65,27 +65,25 @@ All text fades in at once instead of letter by letter.
 
 ## Install
 
-1. Copy `SLUS-20974_D7273511.pnach` into your PCSX2 `patches` folder (PCSX2: *Tools → Open Data Directory*, then `patches`).
-2. In PCSX2, right-click the game → **Properties → Patches**, and tick the Good Karma mods you want.
-3. For full 6x turbo: in the same Properties window, **Emulation → EE Cycle Rate → 300%**.
-4. Start (or restart) the game. Patches apply at boot.
+Download `GoodKarma-v<version>.zip` (it contains no game data), extract it, close PCSX2, and run `Install.bat`.
+Pick your Digital Devil Saga (USA) disc image (it is checked, never changed), confirm the PCSX2 data folder, tick the
+modules you want and click **Install**. Start the game in PCSX2; mods load at boot.
 
-Savestates made with a mod on keep that mod's code in memory; after changing which mods are enabled, load from a memory-card save or boot fresh.
-
-### Scripted install (optional)
-With Python 3 from the repository:
-```
-python tools/install.py "<PCSX2 data folder>"              # all mods
-python tools/install.py "<PCSX2 data folder>" --no-turbo   # skip a mod: --no-turbo / --no-set / --no-prey / --no-buttons / --no-subtle / --no-sun / --no-wordtripper / --no-twoforone / --no-quickstart / --no-sceneskip / --no-openchests
-```
-This copies the patch file, enables the chosen mods and sets EE Cycle Rate 300% in the game's settings file (other settings are kept).
+- Change modules later by running `Install.bat` again, or in PCSX2: right-click the game > **Properties > Patches**.
+- Manual install: copy `GoodKarma\SLUS-20974_D7273511_GoodKarma.pnach` into PCSX2's `patches` folder
+  (*Tools > Open Data Directory*) and tick the mods in **Properties > Patches**.
+- Savestates keep the mods that were on when they were made; after changing modules, load from a memory-card save.
+- PCSX2's achievements hardcore mode disables patches.
 
 ## Uninstall
-Delete `patches\SLUS-20974_D7273511.pnach`, or untick the mods in **Properties → Patches**.
+Run `goodkarma\Uninstall Good Karma.bat` in your PCSX2 data folder (or click **Remove Good Karma** in the installer).
+It removes the patch file and the Good Karma entries in the game's settings, nothing else.
 
 ## Building from source
 - `tools/build.py` assembles the turbo hook (keystone) and compiles `src/*.c` with Zig (`zig cc`, MIPS III n32) into `build/SLUS-20974_D7273511.pnach`.
 - Requirements: Python 3 with `keystone-engine`, `pyelftools`, `capstone`; Zig 0.16 (path set in `tools/cbuild.py`).
+- `tools/package.py` builds the distributable zip in `dist/` (installer sources in `installer/`);
+  `tools/test_installer.ps1` checks install/uninstall against scratch PCSX2 folders.
 - `PLAN.md` documents the reverse-engineered game structures and addresses.
 
 ## Credits
