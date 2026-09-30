@@ -4,6 +4,7 @@
  * released at battle exit. A private sprite sheet built over it lets the game's sprite
  * routines draw our icons (tint, alpha, pulse all work the same). */
 #include "game.h"
+#include "prey_int.h"
 #include "prey_atlas.h"
 
 #define ATLAS_ADDR   0x000A0000u
@@ -26,23 +27,6 @@
 
 #define PRIO 0x53
 
-typedef struct {
-    u32 magic;
-    int ret_size, ret_unknown;          /* reticle result icon size / ? size, px */
-    int elem_pitch, elem_size, res_size;
-    int board_y, res_dy;                /* element row y and result offset (lines*8) */
-    int ail_y, ail_size, ail_gap;       /* ailment row: y, icon size, gap between groups (px) */
-    int ebuf_pitch, ebuf_size;          /* enemy buffs above heads */
-    int head_lift, head_dy;             /* overhead row: bone-0 height scale (x100), extra world lift */
-    int pbuf_dx, pbuf_dy, pbuf_pitch, pbuf_size;   /* party buffs under the portraits */
-    int help_y;                         /* battle help window y, lines (game default 406) */
-    int debug_all_known;
-    int head_axis;
-    int debug_attr;                     /* test: 1 + attr forces the attribute used for the reticle */
-    int head_bone;                      /* model anchor for the overhead row (2 = the game's HP/MP popup point) */
-} Prey;
-#define PREY_MAGIC 0x5052450c
-#define PR ((volatile Prey *)0x000FD000)
 
 static void prey_defaults(void)
 {
@@ -57,7 +41,7 @@ static void prey_defaults(void)
     p->head_lift = 55; p->head_dy = 0; p->head_bone = 0;
     p->pbuf_dx = 0x1c0; p->pbuf_dy = 616; p->pbuf_pitch = 0xf0; p->pbuf_size = 14;
     p->help_y = 410;
-    p->debug_all_known = 0; p->debug_attr = 0; p->head_axis = 1;
+    p->debug_all_known = 0; p->debug_attr = 0; p->head_axis = 1; p->preview = 1; p->preview_attr = -1;
     p->magic = PREY_MAGIC;
 }
 
@@ -123,7 +107,7 @@ void prey_battle_exit(void)
 }
 
 /* sprite vertex colours are 0xRRGGBBAA (0x80 = full) */
-static u32 rgba(int r, int g, int b, int a) { return (u32)r << 24 | (u32)g << 16 | (u32)b << 8 | (u32)a; }
+u32 rgba(int r, int g, int b, int a) { return (u32)r << 24 | (u32)g << 16 | (u32)b << 8 | (u32)a; }
 
 static u32 mulc(u32 c, u32 t)
 {
@@ -137,7 +121,7 @@ static u32 mulc(u32 c, u32 t)
 }
 
 /* Draw sprite `spr` of our atlas scaled to `size` px square with corner colours. */
-static void icon(int spr, int x, int y, int size, u32 col)
+void prey_icon(int spr, int x, int y, int size, u32 col)
 {
     u32 sh = prey_sheet();
     if (!sh) return;
@@ -149,12 +133,11 @@ static void icon(int spr, int x, int y, int size, u32 col)
 
 /* ---- affinity / knowledge --------------------------------------------------- */
 
-enum { R_NONE, R_UNKNOWN, R_WEAK, R_NORMAL, R_RESIST, R_NULL, R_REFLECT, R_DRAIN };
 
 #define KNOW ((volatile u16 *)(GBWK + KNOW_OFS))
 
 static int unit_species(u32 u) { return *(volatile u16 *)(u + 0x124); }
-static int is_enemy(u32 u) { return (RD32(u + 0x110) & 0x400) != 0; }
+int is_enemy(u32 u) { return (RD32(u + 0x110) & 0x400) != 0; }
 
 static int known(u32 u, int attr)
 {
@@ -186,7 +169,7 @@ static int raw_result(u32 u, int attr)
     return R_NORMAL;
 }
 
-static int result(u32 u, int attr)
+int prey_result(u32 u, int attr)
 {
     if (attr < 0 || attr > 14 || attr == 7) return attr == 7 ? R_NORMAL : R_NONE;
     if (!known(u, attr)) return R_UNKNOWN;
@@ -209,12 +192,12 @@ static int action_attr(void)
     return f_skill_attr(actor, skill) & 0xff;
 }
 
-static const int result_spr_ret[8] = { -1, SPR_RET_UNKNOWN, SPR_RET_WEAK, SPR_RET_NORMAL, SPR_RET_RESIST,
+const int prey_result_spr_ret[8] = { -1, SPR_RET_UNKNOWN, SPR_RET_WEAK, SPR_RET_NORMAL, SPR_RET_RESIST,
                                        SPR_RET_NULL, SPR_RET_REFLECT, SPR_RET_DRAIN };
 static const int result_spr_res[8] = { -1, SPR_RES_UNKNOWN, SPR_RES_WEAK, SPR_RES_NORMAL, SPR_RES_RESIST,
                                        SPR_RES_NULL, SPR_RES_REFLECT, SPR_RES_DRAIN };
 
-static u32 result_tint(int r)
+u32 prey_result_tint(int r)
 {
     if (r == R_WEAK) return rgba(0x30, 0x80, 0x30, 0x80);
     if (r > R_RESIST) return rgba(0x80, 0x20, 0x20, 0x80);
@@ -293,7 +276,7 @@ static u32 white_sheet(u32 sh)
 void prey_ring(int x, int y, int z, u32 *cols, int flags, u32 sh, int spr, int prio)
 {
     if ((spr == 0x1a || spr == 0x1b) && cur_target && is_enemy(cur_target)) {
-        int r = result(cur_target, action_attr());
+        int r = prey_result(cur_target, action_attr());
         if (r == R_NORMAL) {
             u32 ws = white_sheet(sh);
             if (ws) { f_draw438(x, y, z, cols, flags, ws, spr, prio); return; }
@@ -305,8 +288,8 @@ void prey_ring(int x, int y, int z, u32 *cols, int flags, u32 sh, int spr, int p
             int s = r == R_UNKNOWN ? PR->ret_unknown : PR->ret_size;
             int sw = s * 16 * gw / 0x1f0, shh = s * 8 * gw / 0x1f0;   /* scale with the pulse */
             /* resist: the board's full-colour shield; the rest are white glyphs tinted */
-            int spr = r == R_RESIST ? SPR_RES_RESIST : result_spr_ret[r];
-            u32 t = r == R_RESIST ? rgba(0x80, 0x80, 0x80, 0x80) : result_tint(r);
+            int spr = r == R_RESIST ? SPR_RES_RESIST : prey_result_spr_ret[r];
+            u32 t = r == R_RESIST ? rgba(0x80, 0x80, 0x80, 0x80) : prey_result_tint(r);
             u32 c2[4];
             for (int k = 0; k < 4; k++) c2[k] = mulc(cols[k], t);
             u8 *d = defs[spr];
@@ -345,7 +328,7 @@ static void draw_buffs(u32 u, int x, int y, int pitch, int size)
     for (int k = 0; k < 4; k++) {
         int spr = buff_icon(k, buff_level(u, k));
         if (spr < 0) continue;
-        icon(spr, x + n * pitch, y, size, rgba(0x80, 0x80, 0x80, 0x80));
+        prey_icon(spr, x + n * pitch, y, size, rgba(0x80, 0x80, 0x80, 0x80));
         n++;
     }
 }
@@ -360,23 +343,23 @@ static void draw_board(u32 u)
     for (int i = 0; i < 9; i++) {
         int x = x0 + i * p->elem_pitch;
         int hl = board_attrs[i] == attr_now;
-        icon(board_elem[i], x, p->board_y, p->elem_size, hl ? white : rgba(0x70, 0x70, 0x70, 0x80));
-        int spr = result_spr_res[result(u, board_attrs[i])];
-        if (spr >= 0) icon(spr, x + (p->elem_size - p->res_size) * 8, p->board_y + p->res_dy, p->res_size, white);
+        prey_icon(board_elem[i], x, p->board_y, p->elem_size, hl ? white : rgba(0x70, 0x70, 0x70, 0x80));
+        int spr = result_spr_res[prey_result(u, board_attrs[i])];
+        if (spr >= 0) prey_icon(spr, x + (p->elem_size - p->res_size) * 8, p->board_y + p->res_dy, p->res_size, white);
     }
     /* ailments: only known, non-neutral results, centred */
     int show[5], n = 0;
     for (int i = 0; i < 5; i++) {
-        int r = result(u, ail_attrs[i]);
+        int r = prey_result(u, ail_attrs[i]);
         if (r != R_NORMAL && r != R_NONE && r != R_UNKNOWN) show[n++] = i;
     }
     int gw = (p->ail_size * 2) * 16, pitch = gw + p->ail_gap * 16;
     int ax = 4096 - (n * pitch - p->ail_gap * 16) / 2;
     for (int k = 0; k < n; k++) {
         int i = show[k], x = ax + k * pitch;
-        icon(ail_spr[i], x, p->ail_y, p->ail_size, white);
-        int spr = result_spr_res[result(u, ail_attrs[i])];
-        if (spr >= 0) icon(spr, x + p->ail_size * 16, p->ail_y, p->ail_size, white);
+        prey_icon(ail_spr[i], x, p->ail_y, p->ail_size, white);
+        int spr = result_spr_res[prey_result(u, ail_attrs[i])];
+        if (spr >= 0) prey_icon(spr, x + p->ail_size * 16, p->ail_y, p->ail_size, white);
     }
 }
 
@@ -468,6 +451,7 @@ static void draw_enemy_buffs(void)
 }
 
 static void learn_kills(void);
+void prey_preview(void);
 
 /* ---- party buffs: replaces the per-member panel call at 0x1b6e84 -------------- */
 
@@ -480,6 +464,7 @@ void prey_party_panel(u32 unit, u32 work, int slot)
     if (slot == 0) {
         learn_kills();
         draw_enemy_buffs();
+        prey_preview();
         u32 hw = RD32(GP - 0x5914);                 /* battle help window: +0x3c = y (lines) */
         if (hw && p->help_y) RD32(hw + 0x3c) = p->help_y;
     }
