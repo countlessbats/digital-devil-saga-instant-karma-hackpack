@@ -4,7 +4,7 @@ Contents (no game data):
   Install.bat                               launches the installer
   GoodKarma/GoodKarma-Setup.ps1             installer / uninstaller (Windows PowerShell 5.1, WinForms)
   GoodKarma/SLUS-20974_D7273511_GoodKarma.pnach   the mods (release build, player-facing descriptions)
-  README.txt, LICENSE.txt, LICENSE-PreyEyes2.txt
+  README.txt, LICENSE.txt
 """
 import os, re, sys, shutil, zipfile
 
@@ -74,7 +74,6 @@ def main():
     mods = '\n'.join('  %s\n    %s\n' % (n.replace('Good Karma - ', ''), d) for n, d in MODULES)
     put('README.txt', readme.replace('@@VERSION@@', build.VERSION).replace('@@MODULES@@', mods))
     put('LICENSE.txt', open(os.path.join(ROOT, 'LICENSE'), encoding='utf-8').read())
-    put('LICENSE-PreyEyes2.txt', open(os.path.join(ROOT, 'assets', 'preyeyes', 'LICENSE-PreyEyes2'), encoding='utf-8').read())
 
     zpath = os.path.join(dist, name + '.zip')
     if os.path.exists(zpath): os.remove(zpath)

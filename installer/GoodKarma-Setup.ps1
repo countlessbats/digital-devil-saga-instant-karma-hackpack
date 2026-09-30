@@ -5,7 +5,9 @@
 #   <patches>\SLUS-20974_D7273511_GoodKarma.pnach                     (the mods)
 #   <gamesettings>\SLUS-20974_D7273511.ini  [Patches] "Enable = Good Karma - ..." lines (other lines are kept;
 #                                                                      a backup of the original goes to goodkarma\backup)
-#   <PCSX2 data>\goodkarma\                                            (this script, uninstaller, backups)
+#   <gamesettings>\SLUS-20974_D7273511.ini  [EmuCore/Speedhacks] EECycleRate = 3 while Native Turbo is on
+#                                                                      (the earlier value is restored)
+#   <PCSX2 data>\goodkarma\                                            (this script, uninstaller, backups, state)
 param([switch]$Uninstall, [string]$DataRoot)
 
 $ErrorActionPreference = 'Stop'
@@ -219,6 +221,51 @@ function Set-EnableLines([string]$ini, [string[]]$names, [string]$backupDir) {
     Write-TextAtomic $ini (($out -join "`r`n") + "`r`n")
 }
 
+function Set-IniKey([string]$ini, [string]$section, [string]$key, $value) {
+    # Sets (or, with $value = $null, removes) one key; every other line is kept as it was.
+    $lines = @(); if (Test-Path -LiteralPath $ini) { $lines = [IO.File]::ReadAllLines($ini) }
+    $out = New-Object System.Collections.Generic.List[string]
+    $in = $false; $done = $false
+    foreach ($line in $lines) {
+        $t = $line.Trim()
+        if ($t -match '^\[(.+)\]$') {
+            if ($in -and -not $done -and $value -ne $null) { Add-BeforeTrailingBlanks $out @("$key = $value"); $done = $true }
+            $in = ($Matches[1] -eq $section); $out.Add($line); continue
+        }
+        if ($in -and $t -match '^([^=]+?)\s*=' -and $Matches[1] -eq $key) {
+            if ($value -ne $null -and -not $done) { $out.Add("$key = $value"); $done = $true }
+            continue
+        }
+        $out.Add($line)
+    }
+    if ($in -and -not $done -and $value -ne $null) { Add-BeforeTrailingBlanks $out @("$key = $value"); $done = $true }
+    if (-not $done -and $value -ne $null) {
+        if ($out.Count -and $out[$out.Count - 1].Trim() -ne '') { $out.Add('') }
+        $out.Add("[$section]"); $out.Add("$key = $value")
+    }
+    New-Item -ItemType Directory -Force -Path (Split-Path -Parent $ini) | Out-Null
+    Write-TextAtomic $ini (($out -join "`r`n") + "`r`n")
+}
+
+# Native Turbo's 6x needs EE Cycle Rate 300% (EmuCore/Speedhacks EECycleRate = 3) for this game. The installer sets
+# it while Native Turbo is on and remembers the earlier value in goodkarma\state.ini, to put back when Native Turbo
+# is turned off or Good Karma is removed.
+function Set-TurboCycleRate([string]$root, [bool]$on) {
+    $ini = Join-Path (Get-Pcsx2Folder $root 'GameSettings' 'gamesettings') $IniName
+    $state = Join-Path $root 'goodkarma\state.ini'
+    $saved = Read-IniValue $state 'GoodKarma' 'EECycleRateBefore'
+    if ($on) {
+        $cur = Read-IniValue $ini 'EmuCore/Speedhacks' 'EECycleRate'
+        if ($cur -ne '3') {
+            if ($saved -eq $null) { Set-IniKey $state 'GoodKarma' 'EECycleRateBefore' $(if ($cur -eq $null) { 'unset' } else { $cur }) }
+            Set-IniKey $ini 'EmuCore/Speedhacks' 'EECycleRate' '3'
+        }
+    } elseif ($saved -ne $null) {
+        Set-IniKey $ini 'EmuCore/Speedhacks' 'EECycleRate' $(if ($saved -eq 'unset') { $null } else { $saved })
+        Set-IniKey $state 'GoodKarma' 'EECycleRateBefore' $null
+    }
+}
+
 function Install-GoodKarma([string]$root, [string[]]$names) {
     $patches = Get-Pcsx2Folder $root 'Patches' 'patches'
     $gs = Get-Pcsx2Folder $root 'GameSettings' 'gamesettings'
@@ -231,6 +278,7 @@ function Install-GoodKarma([string]$root, [string[]]$names) {
     }
     Write-TextAtomic (Join-Path $patches $PnachName) ([IO.File]::ReadAllText((Join-Path $Here $PnachName)))
     Set-EnableLines (Join-Path $gs $IniName) $names $backup
+    Set-TurboCycleRate $root ($names -contains "${Prefix}Native Turbo")
     # uninstaller in the data folder (this script + a launcher), unless we are running from there already
     $self = Join-Path $Here 'GoodKarma-Setup.ps1'; $dest = Join-Path $gk 'GoodKarma-Setup.ps1'
     if ([IO.Path]::GetFullPath($self) -ne [IO.Path]::GetFullPath($dest)) { Copy-Item -LiteralPath $self -Destination $dest -Force }
@@ -244,6 +292,7 @@ function Uninstall-GoodKarma([string]$root) {
     if ((Test-Path -LiteralPath $pn) -and ([IO.File]::ReadAllText($pn) -match 'author=Good Karma')) { Remove-Item -LiteralPath $pn -Force }
     $ini = Join-Path (Get-Pcsx2Folder $root 'GameSettings' 'gamesettings') $IniName
     if (Test-Path -LiteralPath $ini) { Set-EnableLines $ini @() $null }
+    Set-TurboCycleRate $root $false
     $gk = Join-Path $root 'goodkarma'
     if (Test-Path -LiteralPath $gk) {
         # the folder may hold this running script: remove it once this process has exited
@@ -330,6 +379,7 @@ foreach ($m in $modules) {
     $cb.Font = New-Object System.Drawing.Font('Segoe UI', 9, [System.Drawing.FontStyle]::Bold)
     $cb.Margin = New-Object System.Windows.Forms.Padding(6, 8, 0, 0)
     $d = New-Object System.Windows.Forms.Label; $d.Text = $m.Description; $d.AutoSize = $true
+    if ($m.Title -eq 'Native Turbo') { $d.Text += ' (Sets EE Cycle Rate 300% for this game, needed for full 6x.)' }
     $d.MaximumSize = New-Object System.Drawing.Size(640, 0); $d.Margin = New-Object System.Windows.Forms.Padding(24, 0, 0, 2)
     $modPanel.Controls.Add($cb); $modPanel.Controls.Add($d); $checks[$m.Name] = $cb
 }

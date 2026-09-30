@@ -11,6 +11,8 @@ INSTALL
   5. Start the game in PCSX2. To change modules later, run Install.bat again, or use PCSX2:
      right-click the game > Properties > Patches.
 
+With Native Turbo on, the installer also sets EE Cycle Rate to 300% for this game (needed for full 6x);
+the earlier value comes back if Native Turbo is turned off or Good Karma is removed.
 Mods are loaded by PCSX2 when the game boots. PCSX2's achievements hardcore mode turns patches off.
 Savestates keep the mods that were on when they were made; after changing modules, load from a memory card save.
 
@@ -21,7 +23,8 @@ UNINSTALL
 MODULES
 @@MODULES@@
 CREDITS
-  Prey Eyes icons and design are from Prey Eyes 2 (SMT III Nocturne HD mod, MIT). See LICENSE-PreyEyes2.txt.
+  Prey Eyes is inspired by Shin Megami Tensei V's affinity display and the Prey Eyes 2 mod for SMT III Nocturne HD.
+  All of its icons are original drawings made for Good Karma.
 
 LICENSE
   MIT. See LICENSE.txt.

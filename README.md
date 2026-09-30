@@ -69,6 +69,8 @@ Download `GoodKarma-v<version>.zip` (it contains no game data), extract it, clos
 Pick your Digital Devil Saga (USA) disc image (it is checked, never changed), confirm the PCSX2 data folder, tick the
 modules you want and click **Install**. Start the game in PCSX2; mods load at boot.
 
+- With Native Turbo on, the installer sets EE Cycle Rate 300% for this game (full 6x needs it); the earlier value is
+  restored when Native Turbo is turned off or Good Karma is removed. Manual installs: *Properties > Emulation > EE Cycle Rate*.
 - Change modules later by running `Install.bat` again, or in PCSX2: right-click the game > **Properties > Patches**.
 - Manual install: copy `GoodKarma\SLUS-20974_D7273511_GoodKarma.pnach` into PCSX2's `patches` folder
   (*Tools > Open Data Directory*) and tick the mods in **Properties > Patches**.
@@ -87,7 +89,8 @@ It removes the patch file and the Good Karma entries in the game's settings, not
 - `PLAN.md` documents the reverse-engineered game structures and addresses.
 
 ## Credits
-Prey Eyes icons and design from Prey Eyes 2 (SMT III Nocturne HD mod, MIT); see `assets/preyeyes/LICENSE-PreyEyes2`.
+Prey Eyes is inspired by Shin Megami Tensei V's affinity display and the Prey Eyes 2 mod for SMT III Nocturne HD.
+All icons are original, drawn in code by `tools/icons.py` and `tools/atlas.py`.
 
 ## License
 MIT. See `LICENSE`. This repository contains no game data; you need your own copy of the game.

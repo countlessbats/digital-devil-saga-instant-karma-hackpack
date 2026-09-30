@@ -1,6 +1,6 @@
 """Build the Prey Eyes icon atlas as a PS2 texture in the game's image format.
 
-Sources: Prey Eyes 2 icons (SMT3 HD mod, MIT) under PE_ICONS, plus generated Gun/Earth orbs and buff icons.
+Sources: every icon is drawn in code (tools/icons.py and the Gun/Earth orbs and buff boxes here); no game art.
 Outputs:
   build/prey_atlas.bin   0x40-byte header + CLUT (256 x RGBA32, CSM1 order) + 8-bit pixels
   build/prey_atlas.png   preview
@@ -10,15 +10,11 @@ The header layout matches what the game's texture loader 0x2d3288 reads:
   data at +0x40 (byte[1] & 0xf0 == 0): CLUT first, then pixels.
 """
 import os, struct
+import icons
 from PIL import Image, ImageDraw, ImageFilter
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-PE_ICONS = os.path.join(ROOT, 'assets', 'preyeyes')
 W, H = 256, 256
-
-
-def load(rel):
-    return Image.open(os.path.join(PE_ICONS, rel)).convert('RGBA')
 
 
 def fit(im, size):
@@ -30,19 +26,6 @@ def fit(im, size):
     im = im.resize((max(1, round(w * s)), max(1, round(h * s))), Image.LANCZOS)
     out = Image.new('RGBA', (size, size), (0, 0, 0, 0))
     out.alpha_composite(im, ((size - im.size[0]) // 2, (size - im.size[1]) // 2))
-    return out
-
-
-def white_mask(im, size, lo=70):
-    """Keep only the bright glyph as white-with-alpha so it can be tinted by vertex colour."""
-    im = fit(im, size)
-    out = Image.new('RGBA', im.size)
-    px = []
-    for r, g, b, a in im.getdata():
-        lum = (r * 3 + g * 6 + b) / 10
-        al = 0 if lum < lo else min(255, int((lum - lo) * 255 / (255 - lo)))
-        px.append((255, 255, 255, al * a // 255))
-    out.putdata(px)
     return out
 
 
@@ -84,24 +67,14 @@ def earth_glyph(d, S):
 
 
 def buff_icon(stat, up, level, size=20):
-    """Box + stat glyph + 1..4 arrows, in the Prey Eyes kajakunda style."""
-    srcs = {'att': ['attdown2.png', 'attup2.png'], 'def': ['defdown1.png', 'defup1.png'],
-            'acc': ['accdown1.png', 'accup1.png'], 'mag': ['magdown1.png', 'magup1.png']}
-    src = load('kajakunda/' + srcs[stat][1 if up else 0])
+    """Box + stat glyph (icons.stat_glyph) + 1..4 arrows."""
     col = (190, 255, 60, 255) if up else (252, 70, 104, 255)
     glyph_col = (210, 255, 110) if up else (255, 144, 162)
     S = 36
     im = Image.new('RGBA', (S, S), (0, 0, 0, 255))
     d = ImageDraw.Draw(im)
     d.rectangle((0, 0, S - 1, S - 1), outline=col, width=2)
-    # glyph: columns 3..17 of the source, recoloured
-    g = src.crop((3, 3, 18, 33))
-    gp = []
-    for r, gg, b, a in g.getdata():
-        lum = (r + gg + b) / 3
-        gp.append(glyph_col + (255,) if (a > 128 and lum > 90) else (0, 0, 0, 0))
-    g.putdata(gp)
-    im.alpha_composite(g, (3, 3))
+    im.alpha_composite(icons.stat_glyph(stat, glyph_col + (255,)), (3, 3))
     # arrows: stacked in the right half
     ax, aw = 21, 11
     n = level
@@ -119,23 +92,15 @@ def buff_icon(stat, up, level, size=20):
 
 def sprites():
     out = []   # (name, image)
-    elem = [('phys', 'smt3/phys.png'), ('gun', None), ('fire', 'smt3/fire.png'), ('ice', 'smt3/ice.png'),
-            ('elec', 'smt3/elec.png'), ('force', 'smt3/force.png'), ('earth', None),
-            ('expel', 'smt3/light.png'), ('death', 'smt3/dark.png')]
-    for n, f in elem:
-        im = load(f) if f else orb(gun_glyph if n == 'gun' else earth_glyph)
+    for n in ('phys', 'gun', 'fire', 'ice', 'elec', 'force', 'earth', 'expel', 'death'):
+        im = orb(gun_glyph) if n == 'gun' else orb(earth_glyph) if n == 'earth' else icons.element(n)
         out.append(('ELEM_' + n.upper(), fit(im, 24)))
     for n in ('weak', 'resist', 'null', 'reflect', 'drain', 'normal', 'unknown'):
-        out.append(('RES_' + n.upper(), fit(load('smt3/results/%s.png' % n), 20)))
-    rmap = {'weak': 'result_weak', 'resist': 'result_resist', 'null': 'result_null', 'reflect': 'result_reflect',
-            'drain': 'result_drain', 'normal': 'result_normal', 'unknown': 'result_unknown'}
-    for n, f in rmap.items():
-        if n == 'normal':
-            out.append(('RET_NORMAL', ring(32)))
-        else:
-            out.append(('RET_' + n.upper(), white_mask(load('smt3/%s.png' % f), 32, lo=110)))
-    for n, f in (('charm', 'charm'), ('poison', 'poison'), ('mute', 'seal'), ('panic', 'confusion'), ('sleep', 'sleep')):
-        out.append(('AIL_' + n.upper(), fit(load('smt3/ailments/%s.png' % f), 16)))
+        out.append(('RES_' + n.upper(), fit(icons.badge(n), 20)))
+    for n in ('weak', 'resist', 'null', 'reflect', 'drain', 'normal', 'unknown'):
+        out.append(('RET_' + n.upper(), ring(32) if n == 'normal' else fit(icons.reticle(n), 32)))
+    for n in ('charm', 'poison', 'mute', 'panic', 'sleep'):
+        out.append(('AIL_' + n.upper(), fit(icons.ailment(n), 16)))
     for stat in ('att', 'mag', 'def', 'acc'):
         for up in (1, 0):
             for lv in range(1, 5):
