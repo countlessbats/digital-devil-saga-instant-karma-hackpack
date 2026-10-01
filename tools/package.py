@@ -36,6 +36,8 @@ MODULES = [
     (build.PATCH_SKIP, 'Press START to hyper-turbo through cutscenes.'),
     (build.PATCH_CHEST, 'No more confirmation on opening chests.'),
     (build.PATCH_WT, 'Dialogue appears instantly.'),
+    (build.PATCH_WS, '16:9 widescreen. The 3D view gets wider while menus, text and portraits keep their '
+                     'original shape. Sets PCSX2 to 16:9 while it is on.'),
 ]
 
 

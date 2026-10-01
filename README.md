@@ -70,6 +70,9 @@ Inspecting a chest (or a floating jewel) opens it straight away: the "A strange 
 ### WordTripper
 All text fades in at once instead of letter by letter.
 
+### Widescreen
+16:9 widescreen. The camera shows a wider view, and the 2D interface (menus, text, portraits, the sun gauge, Prey Eyes) is drawn at its original 4:3 proportions instead of being stretched. Battle reticles and Prey Eyes' icons above enemies still line up with them. Enabling it switches PCSX2's aspect ratio to 16:9 for this game. The field minimap is shown as the game draws it, slightly wide, at the right edge.
+
 ## Install
 
 Download `InstantKarma-v<version>.zip` (it contains no game data), extract it, close PCSX2, and run `Install.bat`.

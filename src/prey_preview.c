@@ -19,7 +19,8 @@
 #define f_skill_attr  ((int (*)(u32, u32))0x001a2f00)
 #define f_unit_anchor ((int (*)(u32, int))0x001d6360)   /* bone 0 position into vf10, 0 if none */
 #define f_unit_pos    ((void (*)(u32))0x001f6498)       /* unit position into vf10 */
-#define f_project     ((int (*)(int *))0x001f6158)      /* vf10 -> screen px/lines, 0 if off */
+int ws_project(int *out);                          /* 0x1f6158, widescreen-aware (widescreen.c) */
+#define f_project     ws_project
 #define TARGET_PANEL  0x003a1eb0u                        /* task id "btl_panel_target" */
 
 static float pv[4] __attribute__((aligned(16)));
