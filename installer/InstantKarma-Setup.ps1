@@ -158,12 +158,13 @@ function Find-DataRoots {
 
 # ---- install state -----------------------------------------------------------------------------------------------
 function Get-Sections([string]$pnachPath) {
-    # -> ordered list of @{ Name; Title; Description } from the pnach's [Instant Karma - ...] sections
+    # -> ordered list of @{ Name; Title; Description } from the pnach's [Instant Karma - ...] sections.
+    # Core isn't a choice; it is kept aside in $script:Core for display.
     $list = New-Object System.Collections.Generic.List[object]; $cur = $null
     foreach ($line in [IO.File]::ReadAllLines($pnachPath)) {
         if ($line -match '^\[(.+)\]$') {
-            if ($Matches[1] -eq $CoreName) { $cur = $null; continue }
-            $cur = @{ Name = $Matches[1]; Title = $Matches[1].Replace($Prefix, ''); Description = '' }; $list.Add($cur)
+            $cur = @{ Name = $Matches[1]; Title = $Matches[1].Replace($Prefix, ''); Description = '' }
+            if ($Matches[1] -eq $CoreName) { $script:Core = $cur } else { $list.Add($cur) }
         }
         elseif ($cur -and $line -like 'description=*') { $cur.Description = $line.Substring(12) }
     }
@@ -379,6 +380,14 @@ $modPanel = New-Object System.Windows.Forms.FlowLayoutPanel
 $modPanel.FlowDirection = 'TopDown'; $modPanel.WrapContents = $false; $modPanel.AutoScroll = $true; $modPanel.Dock = 'Fill'
 $modPanel.BorderStyle = 'FixedSingle'
 $checks = @{}
+if ($script:Core) {    # always installed with the modules: shown ticked and greyed out
+    $cb = New-Object System.Windows.Forms.CheckBox; $cb.Text = $script:Core.Title; $cb.Checked = $true; $cb.Enabled = $false; $cb.AutoSize = $true
+    $cb.Font = New-Object System.Drawing.Font('Segoe UI', 9, [System.Drawing.FontStyle]::Bold)
+    $cb.Margin = New-Object System.Windows.Forms.Padding(6, 8, 0, 0)
+    $d = New-Object System.Windows.Forms.Label; $d.Text = $script:Core.Description; $d.AutoSize = $true
+    $d.MaximumSize = New-Object System.Drawing.Size(640, 0); $d.Margin = New-Object System.Windows.Forms.Padding(24, 0, 0, 2)
+    $modPanel.Controls.Add($cb); $modPanel.Controls.Add($d)
+}
 foreach ($m in $modules) {
     $cb = New-Object System.Windows.Forms.CheckBox; $cb.Text = $m.Title; $cb.Checked = $true; $cb.AutoSize = $true
     $cb.Font = New-Object System.Drawing.Font('Segoe UI', 9, [System.Drawing.FontStyle]::Bold)

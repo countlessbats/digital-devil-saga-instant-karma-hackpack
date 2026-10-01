@@ -195,7 +195,7 @@ def build(include_test=False, include_local=False):
     # (PCSX2 re-applies every enabled line each frame, so one copy per section multiplied that work.)
     segs, syms = cbuild.build(include_test, include_local)
     lines += ['', '[%s]' % PATCH_CORE, 'author=Instant Karma v%s' % VERSION,
-              'description=Shared code for the other Instant Karma patches. Keep it on whenever any of them is on.']
+              'description=The engine that makes the other Instant Karma features go. Always on while any of them is on; keep it ticked in the PCSX2 Patches list.']
     for addr, data in segs:
         data = data + b'\0' * (-len(data) % 4)
         for i in range(0, len(data), 4):
