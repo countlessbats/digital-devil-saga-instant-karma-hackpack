@@ -1,6 +1,7 @@
 /* Field toggles, active only while walking around (not in menus, battles or events):
  *   SubtleKarma: d-pad UP toggles random encounters, with a system sound and a message.
  *   SunKing:     d-pad DOWN switches solar noise between MAX and MIN.
+ *   WideToggle:  d-pad DOWN also switches Widescreen between 16:9 and 4:3 (widescreen.c).
  *   TwoForOne:   SELECT cycles 1-for-1 .. 5-for-1 (tfo.c).
  *   BadKarma:    d-pad RIGHT starts a random encounter now; GoodKarma: d-pad LEFT starts a rare Omoikane fight
  *                (both through the encounter roll in tfo.c, so TwoForOne's reward bonus applies).
@@ -9,10 +10,12 @@
 #include "game.h"
 
 int tfo_mode(void);
+int ws_active(void);
+void ws_toggle(void);
 void tfo_set_mode(int m);
 
 #define GP           0x003c0cf0u
-#define FEATURES     ((volatile u32 *)0x000FD200)   /* [2] SubtleKarma, [3] SunKing, [4] TwoForOne, [9] BadKarma, [10] GoodKarma */
+#define FEATURES     ((volatile u32 *)0x000FD200)   /* [2] SubtleKarma, [3] SunKing, [4] TwoForOne, [9] BadKarma, [10] GoodKarma, [12] WideToggle */
 #define GBWK         RD32(0x003baa00u)
 #define BATTLE       RD32(GP - 0x5a0c)
 #define CAMP_STATE   RD8(0x003bc6b4u)
@@ -79,6 +82,11 @@ u32 field_hook(void)
         int full = RD8(GBWK + 0xa41) == 8;
         f_set_phase(full ? 0 : 8);
         f_se(full ? SE_ON : SE_OFF, 0x7f, 0x3f);
+    }
+    if (ok && FEATURES[12] && FEATURES[11] && (edge & BTN_DOWN)) {
+        ws_toggle();
+        f_se(ws_active() ? SE_ON : SE_OFF, 0x7f, 0x3f);
+        show(ws_active() ? "Widescreen" : "4:3");
     }
     if (ok && FEATURES[4] && (edge & BTN_SELECT)) {       /* TwoForOne: cycle 1:1 .. 5:1 */
         static const char *const names[5] = {

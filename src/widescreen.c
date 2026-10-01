@@ -1,5 +1,6 @@
-/* Widescreen: 3D is widened to 16:9 by the camera aspect patch (0x3245e4, in the pnach); this keeps the
- * 2D interface at its 4:3 proportions by squeezing it horizontally about the screen centre.
+/* Widescreen: 3D is widened to 16:9 through the camera aspect (0x3245e4); this keeps the 2D interface at
+ * its 4:3 proportions by squeezing it horizontally about the screen centre. Where WideToggle is on
+ * (FEATURES[12]), d-pad DOWN on the field switches between widescreen and the original 4:3 (ws_toggle).
  *
  * Every finished draw packet is attached to one of the 16 draw layers through the layer's insert function
  * (table 0x324b58 + layer * 0x20, rebuilt every frame by 0x2d4240 / 0x2efd30 with 0x2d41c0 or 0x2efb30).
@@ -12,7 +13,10 @@
 #include "game.h"
 
 #define GP        0x003c0cf0u
-#define FEATURES  ((volatile u32 *)0x000FD200)   /* [11] Widescreen */
+#define FEATURES  ((volatile u32 *)0x000FD200)   /* [11] Widescreen, [12] WideToggle */
+#define ASPECT    0x003245e4u     /* camera aspect */
+#define WIDE      0x3fd3a06du     /* 1.653: 16:9 */
+#define NARROW    0x3f951eb8u     /* 1.165: the game's own */
 #define INS_A     0x002d41c0u
 #define INS_B     0x002efb30u
 
@@ -21,6 +25,10 @@
 #define X_MID     0x8000
 
 int ws_world;                     /* nonzero: 2D placed at a projected 3D point, leave it alone */
+static int ws_off;                /* switched to 4:3 by WideToggle */
+
+int ws_active(void) { return FEATURES[11] && !ws_off; }
+void ws_toggle(void) { ws_off = !ws_off; }
 
 typedef void (*ins_fn)(u32, u32);
 void ws_ins_a(u32 layer, u32 obj);
@@ -121,7 +129,9 @@ static void ws_packet(u32 obj)
 
 static void ws_ins(u32 layer, u32 obj, u32 orig)
 {
-    if (FEATURES[11] && !ws_world && obj) ws_packet(obj);
+    int on = ws_active();
+    RD32(ASPECT) = on ? WIDE : NARROW;
+    if (on && !ws_world && obj) ws_packet(obj);
     ((ins_fn)orig)(layer, obj);
 }
 void ws_ins_a(u32 layer, u32 obj) { ws_ins(layer, obj, INS_A); }
@@ -134,7 +144,7 @@ void ws_ins_b(u32 layer, u32 obj) { ws_ins(layer, obj, INS_B); }
 int ws_project(int *out)
 {
     int r = f_project(out);
-    if (r && FEATURES[11]) out[0] = 256 + (out[0] - 256) * 4 / 3;
+    if (r && ws_active()) out[0] = 256 + (out[0] - 256) * 4 / 3;
     return r;
 }
 

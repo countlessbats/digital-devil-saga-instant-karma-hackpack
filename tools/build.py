@@ -279,7 +279,6 @@ def build(include_test=False, include_local=False):
               'gsaspectratio=16:9']
     blob(lines)
     lines.append('patch=1,EE,000FD22C,word,00000001')            # FEATURES[11]: Widescreen on
-    lines.append('patch=1,EE,003245E4,word,3FD3A06D')            # camera aspect 1.165 -> 1.653
     # draw-layer set-up (rebuilt every frame) stores our insert wrappers instead of 0x2d41c0 / 0x2efb30
     hi = lambda a: ((a + 0x8000) >> 16) & 0xffff
     lo = lambda a: a & 0xffff
