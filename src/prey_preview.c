@@ -63,11 +63,31 @@ static int reticle_point(u32 u, int *sx, int *sy)
     return 1;
 }
 
+/* Test only: while 0xFD0FC = 'AFF!', the first two live enemies' affinity per attribute 0..9 goes to 0xFD100:
+ * per enemy 10 x {aisyo, base, modifier}. */
+#define f_aisyo_t ((u32 (*)(u32, u32, int))0x001a7410)
+#define f_aff_base ((u32 (*)(u32, int))0x001a2f50)
+#define f_aff_mod  ((u32 (*)(u32, int))0x001a51c8)
+static void affinity_dump(u32 b)
+{
+    if (RD32(0xFD0FCu) != 0x21464641u) return;
+    int e = 0, n = 0;
+    for (u32 u = RD32(b + 0x228); u && n < 16 && e < 2; u = RD32(u + 0x344), n++) {
+        if (!is_enemy(u) || *(volatile u16 *)(u + 0x126) == 0) continue;
+        for (int a = 0; a < 10; a++) {
+            u32 at = 0xFD100u + (e * 10 + a) * 12;
+            RD32(at) = f_aisyo_t(u, 0, a); RD32(at + 4) = f_aff_base(u, a); RD32(at + 8) = f_aff_mod(u, a);
+        }
+        e++;
+    }
+}
+
 /* Called every battle frame from the party panel draw (prey.c). */
 void prey_preview(void)
 {
     volatile Prey *p = PR;
     u32 b = BATTLE_WORK;
+    if (b) affinity_dump(b);
     int attr = (b && p->preview) ? hover_attr() : -1;
     if (attr >= 0 && p->debug_attr) attr = p->debug_attr - 1;   /* test: force an attribute */
     p->preview_attr = attr;

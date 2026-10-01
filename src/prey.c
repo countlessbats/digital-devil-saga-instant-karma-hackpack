@@ -162,9 +162,11 @@ static int raw_result(u32 u, int attr)
     if (a & 0x40000) return R_DRAIN;
     if (a & 0x20000) return R_REFLECT;
     if (a & 0x10000) return R_NULL;
+    /* weak is the game's flag (bit 31: the hit that knocks down / grants a press turn, as 0x1a5958 tests);
+     * a plain percentage above 100 (e.g. a Preta's 130% Phys) is only extra damage, shown as normal */
+    if (a & 0x80000000u) return R_WEAK;
     int pct = a & 0xffff;
     if (pct == 0) return R_NULL;
-    if (pct > 100) return R_WEAK;
     if (pct < 100) return R_RESIST;
     return R_NORMAL;
 }
