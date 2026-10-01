@@ -151,6 +151,7 @@ PATCH_CHEST = 'Instant Karma - OpenChests'
 PATCH_BADK = 'Instant Karma - BadKarma'
 PATCH_GOODK = 'Instant Karma - GoodKarma'
 PATCH_WS = 'Instant Karma - Widescreen'
+PATCH_QH = 'Instant Karma - QuickHeal'
 ATLAS_ADDR = 0x000A0000
 
 def build(include_test=False, include_local=False):
@@ -273,6 +274,13 @@ def build(include_test=False, include_local=False):
               'description=Text appears all at once, fading in together instead of letter by letter.']
     lines.append('patch=1,EE,00195664,word,00000000')   # no per-line wait (bne v1,v0)
     lines.append('patch=1,EE,0019566C,word,0000102D')   # previous-glyph alpha check -> always pass
+    # ---- QuickHeal: a recovery terminal heals the party at once (menu price for everyone), no menu ----
+    lines += ['', '[%s]' % PATCH_QH, 'author=Instant Karma v%s' % VERSION,
+              'description=Inspecting a recovery terminal heals the party at once (same price as the menu), no menu.']
+    blob(lines)
+    lines.append('patch=1,EE,000FD234,word,00000001')            # FEATURES[13]: QuickHeal on
+    lines.append('patch=1,EE,00249FA8,word,%08X' % (0x08000000 | (syms['qh_term_open'] >> 2)))   # j qh_term_open
+    lines.append('patch=1,EE,00249FAC,word,00000000')            # (delay slot)
     # ---- Widescreen: 16:9 camera (the camera aspect constant) with the 2D interface kept at 4:3 proportions ----
     lines += ['', '[%s]' % PATCH_WS, 'author=Instant Karma v%s' % VERSION,
               'description=16:9 widescreen: wider 3D view; menus and text keep their shape.',
