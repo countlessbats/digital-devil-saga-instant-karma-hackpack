@@ -424,12 +424,13 @@ static void draw_enemy_buffs(void)
     if (!b || !prey_sheet()) return;
     /* battle+0x164 -> +0: battle phase (6 waiting for a command), +0x24: skill of the action
      * resolving (0xffffffff for none, e.g. Pass). Hidden only while an action resolves, unless
-     * that action changes buffs; Pass and turn handoffs keep them up. */
+     * that action changes buffs; Pass, turn handoffs and choosing a target keep them up (the skill
+     * is already set while the target panel is open). */
     u32 rec = RD32(b + 0x164);
     int phase = rec ? (int)RD32(rec) : 0;
     int panel = f_task_by_id(0x3a1ec8u) || f_task_by_id(0x3a1eb0u);   /* "btl_panel_command" / "btl_panel_target" */
     static int prev_exec;
-    int exec = rec && phase != 6 && RD32(rec + 0x24) != 0xffffffffu;   /* a skill/attack is resolving */
+    int exec = !panel && rec && phase != 6 && RD32(rec + 0x24) != 0xffffffffu;   /* a skill/attack is resolving */
     if ((prev_exec && !exec) || panel) buff_pending = 0;      /* that action is over */
     prev_exec = exec;
     if (exec && !buff_pending) return;
