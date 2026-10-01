@@ -50,11 +50,10 @@ static int reward_mult(void)
  * The roll (0x11cb90) adds walked distance; each 100 units raises the danger counter (+0x1364) and, once it passes
  * the area's threshold, picks a formation and returns area<<24 | index<<16 | formation (also kept at gp-0x6230).
  * Forcing it: a full 100 units and danger at the maximum. Areas without encounters return 0 as usual.
- * Omoikane: formations 0x30b..0x30d (one or two of the regular, big-reward Omoikane, species 0x62). */
+ * Omoikane: formation 0x30b (a single regular, big-reward Omoikane, species 0x62). */
 int karma_force;
 int karma_none;            /* set when a forced roll found no encounters here (the field shows a message) */
 #define ENC_RESULT   RD32(GP - 0x6230)
-#define f_rand       ((int (*)(int, int))0x002e83f8)  /* 0..n-1 */
 
 /* encounter step (0x124d1c, 0x124d48, 0x216228) */
 u32 tfo_enc(float dist, u32 area)
@@ -71,7 +70,7 @@ u32 tfo_enc(float dist, u32 area)
     u32 r = f_enc(dist, area);
     if (force && area && !r) karma_none = 1;           /* this area has no random encounters */
     if (force == 2 && r) {
-        r = (r & 0xffff0000u) | (0x30bu + (u32)f_rand(0, 3));
+        r = (r & 0xffff0000u) | 0x30bu;
         ENC_RESULT = r;
     }
     return r;

@@ -46,7 +46,7 @@ On the field, **d-pad DOWN** switches solar noise between MAX and MIN.
 On the field, **d-pad RIGHT** starts a random battle right away, as if the encounter had just rolled. Areas with no random encounters (safe rooms, many chest rooms) say "No enemies here". TwoForOne's reward bonus applies.
 
 ### GoodKarma
-On the field, **d-pad LEFT** starts a rare Omoikane fight (one or two Omoikane). Same rules as BadKarma, and TwoForOne's reward bonus applies.
+On the field, **d-pad LEFT** starts a rare Omoikane fight (a single Omoikane). Same rules as BadKarma, and TwoForOne's reward bonus applies.
 
 ### TwoForOne
 On the field, **SELECT** cycles 1-for-1 → 2-for-1 → … → 5-for-1 (with a sound and an on-screen message). At N-for-1:
