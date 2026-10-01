@@ -3,7 +3,7 @@ import ctypes, ctypes.wintypes as W, sys, os
 from PIL import Image
 u = ctypes.windll.user32; k = ctypes.windll.kernel32; g = ctypes.windll.gdi32
 ctypes.windll.shcore.SetProcessDpiAwareness(2)
-target = r'<local path>'
+target = os.environ.get('SHOT_EXE', r'<local path>').lower().replace(chr(92), '/')
 found = []
 @ctypes.WINFUNCTYPE(W.BOOL, W.HWND, W.LPARAM)
 def cb(h, _):
