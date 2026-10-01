@@ -43,9 +43,9 @@ u32 chest_cmd_msg(void)
     u32 r = f_cmd_msg();
     if (!FEATURES[7] || r != 0) return r;
     int win = f_script_win();
-    if (win < 0 || win >= 32) return r;
+    if (win < 0 || win >= 128) return r;               /* free-camera rooms use higher slots (e.g. 35) */
     u32 w = WINDOW(win);
-    if (!w || !is_question(RD32(w + 0x2c))) {
+    if (w < 0x100000u || w >= 0x2000000u || !is_question(RD32(w + 0x2c))) {
         if (SCRIPT_CTX == chest_ctx) chest_ctx = 0;    /* "Obtained ...": the chest's own pacing is over */
         return r;
     }
