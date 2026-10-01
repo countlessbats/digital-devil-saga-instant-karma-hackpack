@@ -21,6 +21,7 @@ $Crc       = 'D7273511'
 $PnachName = "${Serial}_${Crc}_InstantKarma.pnach"
 $IniName   = "${Serial}_${Crc}.ini"
 $Prefix    = 'Instant Karma - '
+$CoreName  = "${Prefix}Core"         # shared code: on whenever any module is on, never offered as a choice
 $Here      = Split-Path -Parent $MyInvocation.MyCommand.Path
 $Utf8      = New-Object System.Text.UTF8Encoding($false)
 
@@ -160,7 +161,10 @@ function Get-Sections([string]$pnachPath) {
     # -> ordered list of @{ Name; Title; Description } from the pnach's [Instant Karma - ...] sections
     $list = New-Object System.Collections.Generic.List[object]; $cur = $null
     foreach ($line in [IO.File]::ReadAllLines($pnachPath)) {
-        if ($line -match '^\[(.+)\]$') { $cur = @{ Name = $Matches[1]; Title = $Matches[1].Replace($Prefix, ''); Description = '' }; $list.Add($cur) }
+        if ($line -match '^\[(.+)\]$') {
+            if ($Matches[1] -eq $CoreName) { $cur = $null; continue }
+            $cur = @{ Name = $Matches[1]; Title = $Matches[1].Replace($Prefix, ''); Description = '' }; $list.Add($cur)
+        }
         elseif ($cur -and $line -like 'description=*') { $cur.Description = $line.Substring(12) }
     }
     return ,$list
@@ -173,7 +177,7 @@ function Get-EnabledModules([string]$root) {
     foreach ($line in [IO.File]::ReadAllLines($ini)) {
         $t = $line.Trim()
         if ($t -match '^\[(.+)\]$') { $in = ($Matches[1] -eq 'Patches'); continue }
-        if ($in -and $t -match '^Enable\s*=\s*(.+)$' -and $Matches[1].StartsWith($Prefix)) { $on += $Matches[1].Trim() }
+        if ($in -and $t -match '^Enable\s*=\s*(.+)$' -and $Matches[1].StartsWith($Prefix) -and $Matches[1].Trim() -ne $CoreName) { $on += $Matches[1].Trim() }
     }
     return ,$on
 }
@@ -277,7 +281,8 @@ function Install-InstantKarma([string]$root, [string[]]$names) {
         Move-Item -LiteralPath $legacy -Destination (Join-Path $backup "${Serial}_${Crc}.pnach.old") -Force
     }
     Write-TextAtomic (Join-Path $patches $PnachName) ([IO.File]::ReadAllText((Join-Path $Here $PnachName)))
-    Set-EnableLines (Join-Path $gs $IniName) $names $backup
+    $enable = if ($names.Count) { @($CoreName) + $names } else { @() }
+    Set-EnableLines (Join-Path $gs $IniName) $enable $backup
     Set-TurboCycleRate $root ($names -contains "${Prefix}Native Turbo")
     # uninstaller in the data folder (this script + a launcher), unless we are running from there already
     $self = Join-Path $Here 'InstantKarma-Setup.ps1'; $dest = Join-Path $gk 'InstantKarma-Setup.ps1'

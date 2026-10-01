@@ -16,6 +16,7 @@ PNACH_OUT = 'SLUS-20974_D7273511_InstantKarma.pnach'
 
 # player-facing order and descriptions (section names stay as they are: PCSX2 settings refer to them)
 MODULES = [
+    (build.PATCH_CORE, 'Shared code for the other Instant Karma patches. Keep it on whenever any of them is on.'),
     (build.PATCH_PREY, 'A complete combat UI overhaul. Discover enemy weaknesses by experiment or by killing them, '
                        'then see them represented in a board and in targeting reticles, and previewed on enemies '
                        'as you browse skills. See buff and debuff stacks. '
@@ -80,7 +81,7 @@ def main():
     put(os.path.join('InstantKarma', 'InstantKarma-Setup.ps1'), setup.replace('@@VERSION@@', build.VERSION))
     put('Install.bat', open(os.path.join(ROOT, 'installer', 'Install.bat'), encoding='utf-8').read())
     readme = open(os.path.join(ROOT, 'installer', 'README.txt'), encoding='utf-8').read()
-    mods = '\n'.join('  %s\n    %s\n' % (n.replace('Instant Karma - ', ''), d) for n, d in MODULES)
+    mods = '\n'.join('  %s\n    %s\n' % (n.replace('Instant Karma - ', ''), d) for n, d in MODULES if n != build.PATCH_CORE)
     put('README.txt', readme.replace('@@VERSION@@', build.VERSION).replace('@@MODULES@@', mods))
     put('LICENSE.txt', open(os.path.join(ROOT, 'LICENSE'), encoding='utf-8').read())
 

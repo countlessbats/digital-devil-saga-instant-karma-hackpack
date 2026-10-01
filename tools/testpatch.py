@@ -26,7 +26,7 @@ noan:
     lhu   $11, -0x64fa($10)       # 0x3f9b06 pad0 raw held
     sh    $11, 8($sp)
     or    $11, $11, $9
-    jal   0x2e39c8
+    jal   0xF0280                 # pad read through the turbo pad filter (needs Native Turbo on)
     sh    $11, -0x64fa($10)
     # raw value is left injected for the rest of the frame (field code reads it later)
     ld    $ra, 0($sp)
@@ -68,6 +68,26 @@ go:
     sd    $21, 0x38($29)
 '''
 
+MT_CODE = 0x000F0500
+MT_ASM = """
+    .set noreorder
+    addiu $8, $zero, 0x15
+    bne   $4, $8, mt_out
+    lui   $8, 0x000F
+    lw    $9, 0x4030($8)
+    addiu $9, $9, 1
+    sw    $9, 0x4030($8)
+    sw    $31, 0x4034($8)
+    lw    $9, 0($5)
+    sw    $9, 0x4038($8)
+    lw    $9, 4($5)
+    sw    $9, 0x403c($8)
+mt_out:
+    addiu $sp, $sp, -0x30
+    j     0x1028f0
+    sd    $18, 0x10($sp)
+"""
+
 if __name__ == '__main__':
     dest = sys.argv[1] if len(sys.argv) > 1 else r'<local path>'
     release_layout = bool(os.environ.get('RELEASE_LAYOUT'))   # exact release blob + pad injection only
@@ -87,5 +107,11 @@ if __name__ == '__main__':
         for i, w in enumerate(tw): lines.append('patch=1,EE,%08X,word,%08X' % (TR_CODE + 4 * i, w))
         lines.append('patch=1,EE,002BF438,word,%08X' % (0x08000000 | (TR_CODE >> 2)))
         lines.append('patch=1,EE,002BF43C,word,00000000')
+    if os.environ.get('MODE_TRACE'):    # log requests for game mode 0x15 (Karma Terminal): count, caller, args
+        lines = [chr(10).join(l for l in lines[0].split(chr(10)) if ',002266E' not in l)] + lines[1:]
+        mw = build.asm(MT_ASM, MT_CODE)
+        for i, w in enumerate(mw): lines.append('patch=1,EE,%08X,word,%08X' % (MT_CODE + 4 * i, w))
+        lines.append('patch=1,EE,001028E8,word,%08X' % (0x08000000 | (MT_CODE >> 2)))
+        lines.append('patch=1,EE,001028EC,word,00000000')
     open(os.path.join(dest, build.PNACH), 'w').write('\n'.join(lines) + '\n')
     print('test pnach ->', dest)

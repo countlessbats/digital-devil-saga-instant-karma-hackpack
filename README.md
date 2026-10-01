@@ -82,8 +82,9 @@ modules you want and click **Install**. Start the game in PCSX2; mods load at bo
 - With Native Turbo on, the installer sets EE Cycle Rate 300% for this game (full 6x needs it); the earlier value is
   restored when Native Turbo is turned off or Instant Karma is removed. Manual installs: *Properties > Emulation > EE Cycle Rate*.
 - Change modules later by running `Install.bat` again, or in PCSX2: right-click the game > **Properties > Patches**.
+  Keep **Instant Karma - Core** ticked whenever any other module is on; it holds their shared code.
 - Manual install: copy `InstantKarma\SLUS-20974_D7273511_InstantKarma.pnach` into PCSX2's `patches` folder
-  (*Tools > Open Data Directory*) and tick the mods in **Properties > Patches**.
+  (*Tools > Open Data Directory*) and tick **Instant Karma - Core** plus the mods you want in **Properties > Patches**.
 - Savestates keep the mods that were on when they were made; after changing modules, load from a memory-card save.
 - PCSX2's achievements hardcore mode disables patches.
 

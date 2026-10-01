@@ -18,9 +18,33 @@ VERSION = open(os.path.join(ROOT, 'VERSION')).read().strip()
 # Each skipped pass restores the packet-buffer index (0x3bd2ea) so all passes
 # build into the buffer the render thread is not holding.
 # Turbo is off (and L3/R3 toggles ignored) while the camp menu is open.
-TURBO_VARS = 0x000F0000   # +0 toggle mult, +1 debug override, +2 prev held, +4 last N, +8 extra passes
+TURBO_VARS = 0x000F0000   # +0 toggle mult, +1 debug override, +2 prev held, +4 last N, +8 extra passes,
+                          # +0x14 buttons as pressed (u16, saved by the pad filter)
 TURBO_CODE = 0x000F0020
 HOOK_SITE = 0x001006AC    # jal 0x101540 inside main loop
+
+# Pad filter: replaces the main loop's pad read (jal 0x2e39c8 at 0x100674; the turbo passes call it too).
+# It keeps the buttons as pressed for turbo, then clears L2/R2 from pad0's raw word (0x3f9b06) before the
+# game reads it, so they only ever control turbo. In the main menu (camp state 0x3bc6b4 != 0) they pass
+# through: turbo is off there and the SET screen uses them to change tabs.
+PAD_FILTER = 0x000F0280
+PAD_SITE = 0x00100674
+PAD_FILTER_ASM = """
+    .set noreorder
+    lui   $10, 0x0040
+    lhu   $11, -0x64fa($10)       # 0x3f9b06 pad0 raw buttons (active high)
+    lui   $12, 0x000F
+    sh    $11, 0x14($12)          # 0xF0014: as pressed, for turbo
+    lui   $13, 0x003C
+    lbu   $13, -0x394c($13)       # 0x3bc6b4 camp menu state
+    bne   $13, $zero, keep
+    nop
+    andi  $11, $11, 0xfffc        # drop L2 (0x1) and R2 (0x2)
+    sh    $11, -0x64fa($10)
+keep:
+    j     0x2e39c8
+    nop
+"""
 
 TURBO_ASM = """
     .set noreorder
@@ -29,8 +53,7 @@ TURBO_ASM = """
     sd    $s0, 8($sp)
     sd    $s1, 0x10($sp)
     lui   $s1, 0x000F
-    lui   $8, 0x003C
-    lhu   $8, -0x2c60($8)       # 0x3bd3a0 pad0 held (active high)
+    lhu   $8, 0x14($s1)          # 0xF0014 buttons as pressed (the pad filter hides L2/R2 from the game)
     lhu   $9, 2($s1)
     sh    $8, 2($s1)
     lui   $12, 0x003C
@@ -96,7 +119,7 @@ extra:
     lbu   $9, -0x2d16($8)         # 0x3bd2ea packet buffer index: undo this pass's flip
     xori  $9, $9, 1
     sb    $9, -0x2d16($8)
-    jal   0x2e39c8                # refresh pad so edges don't repeat
+    jal   0xF0280                # refresh pad (through the filter) so edges don't repeat
     nop
     lui   $8, 0x003C
     lw    $9, -0x5900($8)       # 0x3ba700 frame counter
@@ -152,6 +175,7 @@ PATCH_BADK = 'Instant Karma - BadKarma'
 PATCH_GOODK = 'Instant Karma - GoodKarma'
 PATCH_WS = 'Instant Karma - Widescreen'
 PATCH_QH = 'Instant Karma - QuickHeal'
+PATCH_CORE = 'Instant Karma - Core'
 ATLAS_ADDR = 0x000A0000
 
 def build(include_test=False, include_local=False):
@@ -164,13 +188,23 @@ def build(include_test=False, include_local=False):
     for i, w in enumerate(words):
         lines.append('patch=1,EE,%08X,word,%08X' % (TURBO_CODE + 4 * i, w))
     lines.append('patch=1,EE,%08X,word,%08X' % (HOOK_SITE, jal(TURBO_CODE)))
-    # ---- C mods (src/*.c): the code blob is emitted in every section that uses it ----
+    for i, w in enumerate(asm(PAD_FILTER_ASM, PAD_FILTER)):
+        lines.append('patch=1,EE,%08X,word,%08X' % (PAD_FILTER + 4 * i, w))
+    lines.append('patch=1,EE,%08X,word,%08X' % (PAD_SITE, jal(PAD_FILTER)))
+    # ---- C mods (src/*.c): the code blob lives once, in the Core section every other section relies on.
+    # (PCSX2 re-applies every enabled line each frame, so one copy per section multiplied that work.)
     segs, syms = cbuild.build(include_test, include_local)
+    lines += ['', '[%s]' % PATCH_CORE, 'author=Instant Karma v%s' % VERSION,
+              'description=Shared code for the other Instant Karma patches. Keep it on whenever any of them is on.']
+    for addr, data in segs:
+        data = data + b'\0' * (-len(data) % 4)
+        for i in range(0, len(data), 4):
+            lines.append('patch=1,EE,%08X,word,%08X' % (addr + i, struct.unpack_from('<I', data, i)[0]))
+    # v0.7.28 hooked the terminal opener; save states from it still carry that jump into the old code layout
+    lines.append('patch=1,EE,00249FA8,word,27BDFFF0')   # addiu sp, sp, -0x10
+    lines.append('patch=1,EE,00249FAC,word,FFB00000')   # sd s0, 0(sp)
     def blob(dst):
-        for addr, data in segs:
-            data = data + b'\0' * (-len(data) % 4)
-            for i in range(0, len(data), 4):
-                dst.append('patch=1,EE,%08X,word,%08X' % (addr + i, struct.unpack_from('<I', data, i)[0]))
+        pass                                    # the code is in Core
     def hook(dst, site, target, comment, is_jal=True):
         dst.append('patch=1,EE,%08X,word,%08X' % (site, jal(target) if is_jal else target))
     lines += ['', '[%s]' % PATCH_SET,
@@ -279,8 +313,7 @@ def build(include_test=False, include_local=False):
               'description=Inspecting a recovery terminal heals the party at once (same price as the menu), no menu.']
     blob(lines)
     lines.append('patch=1,EE,000FD234,word,00000001')            # FEATURES[13]: QuickHeal on
-    lines.append('patch=1,EE,00249FA8,word,%08X' % (0x08000000 | (syms['qh_term_open'] >> 2)))   # j qh_term_open
-    lines.append('patch=1,EE,00249FAC,word,00000000')            # (delay slot)
+    lines.append('patch=1,EE,0039E308,word,%08X' % syms['qh_fade'])    # script command 16 (fade)
     # ---- Widescreen: 16:9 camera (the camera aspect constant) with the 2D interface kept at 4:3 proportions ----
     lines += ['', '[%s]' % PATCH_WS, 'author=Instant Karma v%s' % VERSION,
               'description=16:9 widescreen: wider 3D view; menus and text keep their shape.',

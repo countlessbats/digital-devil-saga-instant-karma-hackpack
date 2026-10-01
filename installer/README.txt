@@ -10,6 +10,7 @@ INSTALL
   4. Choose your game's disc image, check the PCSX2 folder it found, pick the modules you want, and click Install.
   5. Start the game in PCSX2. To change modules later, run Install.bat again, or use PCSX2:
      right-click the game > Properties > Patches.
+     Keep "Instant Karma - Core" ticked whenever any other module is on.
 
 With Native Turbo on, the installer also sets EE Cycle Rate to 300% for this game (needed for full 6x);
 the earlier value comes back if Native Turbo is turned off or Instant Karma is removed.
