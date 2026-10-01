@@ -23,7 +23,8 @@ MODULES = [
     (build.PATCH_TURBO, 'Speed up time without distorting audio. Hold R2/L2 for 3x/6x, click R3/L3 to toggle 3x/6x. '
                         'Paused while the main menu is open.'),
     (build.PATCH_SET, 'Increases the SET screen width to 3 columns and adds COST and ALPHABETICAL sort modes on START.'),
-    (build.PATCH_BB, 'In combat, R1 quick-passes your turn, and L1 quick-attempts to escape.'),
+    (build.PATCH_BB, 'In combat, R1 quick-passes your turn, L1 quick-attempts to escape, and the right stick '
+                     'skips a page up or down in the command lists.'),
     (build.PATCH_SK, 'Press up on the d-pad to toggle encounters.'),
     (build.PATCH_SUN, 'Press down on the d-pad to cycle sun state between min and max.'),
     (build.PATCH_BADK, 'Press right on the d-pad to instantly start a fight. TwoForOne reward bonuses apply.'),
