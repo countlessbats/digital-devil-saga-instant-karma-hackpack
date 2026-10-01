@@ -1,4 +1,4 @@
-# Good Karma
+# Instant Karma
 
 Quality-of-life mods for **Shin Megami Tensei: Digital Devil Saga** (USA, SLUS-20974) on PCSX2 2.x.
 All the mods live in one patch file and can be switched on or off independently in PCSX2.
@@ -42,6 +42,12 @@ On the field, **d-pad UP** toggles random encounters off and on, with a system s
 ### SunKing
 On the field, **d-pad DOWN** switches solar noise between MAX and MIN.
 
+### BadKarma
+On the field, **d-pad RIGHT** starts a random battle right away, as if the encounter had just rolled. Areas with no random encounters (safe rooms, many chest rooms) say "No enemies here". TwoForOne's reward bonus applies.
+
+### GoodKarma
+On the field, **d-pad LEFT** starts a rare Omoikane fight (one or two Omoikane). Same rules as BadKarma, and TwoForOne's reward bonus applies.
+
 ### TwoForOne
 On the field, **SELECT** cycles 1-for-1 → 2-for-1 → … → 5-for-1 (with a sound and an on-screen message). At N-for-1:
 - random encounters come N times less often;
@@ -66,21 +72,21 @@ All text fades in at once instead of letter by letter.
 
 ## Install
 
-Download `GoodKarma-v<version>.zip` (it contains no game data), extract it, close PCSX2, and run `Install.bat`.
+Download `InstantKarma-v<version>.zip` (it contains no game data), extract it, close PCSX2, and run `Install.bat`.
 Pick your Digital Devil Saga (USA) disc image (it is checked, never changed), confirm the PCSX2 data folder, tick the
 modules you want and click **Install**. Start the game in PCSX2; mods load at boot.
 
 - With Native Turbo on, the installer sets EE Cycle Rate 300% for this game (full 6x needs it); the earlier value is
-  restored when Native Turbo is turned off or Good Karma is removed. Manual installs: *Properties > Emulation > EE Cycle Rate*.
+  restored when Native Turbo is turned off or Instant Karma is removed. Manual installs: *Properties > Emulation > EE Cycle Rate*.
 - Change modules later by running `Install.bat` again, or in PCSX2: right-click the game > **Properties > Patches**.
-- Manual install: copy `GoodKarma\SLUS-20974_D7273511_GoodKarma.pnach` into PCSX2's `patches` folder
+- Manual install: copy `InstantKarma\SLUS-20974_D7273511_InstantKarma.pnach` into PCSX2's `patches` folder
   (*Tools > Open Data Directory*) and tick the mods in **Properties > Patches**.
 - Savestates keep the mods that were on when they were made; after changing modules, load from a memory-card save.
 - PCSX2's achievements hardcore mode disables patches.
 
 ## Uninstall
-Run `goodkarma\Uninstall Good Karma.bat` in your PCSX2 data folder (or click **Remove Good Karma** in the installer).
-It removes the patch file and the Good Karma entries in the game's settings, nothing else.
+Run `instantkarma\Uninstall Instant Karma.bat` in your PCSX2 data folder (or click **Remove Instant Karma** in the installer).
+It removes the patch file and the Instant Karma entries in the game's settings, nothing else.
 
 ## Building from source
 - `tools/build.py` assembles the turbo hook (keystone) and compiles `src/*.c` with Zig (`zig cc`, MIPS III n32) into `build/SLUS-20974_D7273511.pnach`.

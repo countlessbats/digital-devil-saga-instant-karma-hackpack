@@ -2,6 +2,8 @@
  *   SubtleKarma: d-pad UP toggles random encounters, with a system sound and a message.
  *   SunKing:     d-pad DOWN switches solar noise between MAX and MIN.
  *   TwoForOne:   SELECT cycles 1-for-1 .. 5-for-1 (tfo.c).
+ *   BadKarma:    d-pad RIGHT starts a random encounter now; GoodKarma: d-pad LEFT starts a rare Omoikane fight
+ *                (both through the encounter roll in tfo.c, so TwoForOne's reward bonus applies).
  * Both run from the field's player-control step (call to 0x1249e0 at 0x125980), which the game
  * only reaches while the player has control. */
 #include "game.h"
@@ -10,7 +12,7 @@ int tfo_mode(void);
 void tfo_set_mode(int m);
 
 #define GP           0x003c0cf0u
-#define FEATURES     ((volatile u32 *)0x000FD200)   /* [2] SubtleKarma, [3] SunKing, [4] TwoForOne */
+#define FEATURES     ((volatile u32 *)0x000FD200)   /* [2] SubtleKarma, [3] SunKing, [4] TwoForOne, [9] BadKarma, [10] GoodKarma */
 #define GBWK         RD32(0x003baa00u)
 #define BATTLE       RD32(GP - 0x5a0c)
 #define CAMP_STATE   RD8(0x003bc6b4u)
@@ -18,6 +20,10 @@ void tfo_set_mode(int m);
 #define BTN_UP       0x1000
 #define BTN_DOWN     0x4000
 #define BTN_SELECT   0x0100
+#define BTN_RIGHT    0x2000
+#define BTN_LEFT     0x8000
+extern int karma_force;     /* tfo.c: 1 = force an encounter on the next roll, 2 = an Omoikane one */
+extern int karma_none;      /* tfo.c: the forced roll found no encounters in this area */
 
 #define f_field_ctl  ((u32 (*)(void))0x001249e0)
 #define f_se         ((void (*)(u32, int, int))0x002e8f78)
@@ -86,7 +92,14 @@ u32 field_hook(void)
         f_se(m == 1 ? SE_OFF : SE_ON, 0x7f, 0x3f);
         show(names[m - 1]);
     }
-    if (FEATURES[2] && enc_off) {
+    if (ok && FEATURES[9] && (edge & BTN_RIGHT)) karma_force = 1;   /* BadKarma */
+    if (ok && FEATURES[10] && (edge & BTN_LEFT)) karma_force = 2;   /* GoodKarma */
+    if (karma_none) {                                                 /* nothing to fight in this area */
+        karma_none = 0;
+        f_se(SE_OFF, 0x7f, 0x3f);
+        show("No enemies here");
+    }
+    if (FEATURES[2] && enc_off && !karma_force) {
         /* the encounter roll adds walked distance into +0x1360 and bumps the danger counter at
          * +0x1364 every 100 units; holding both at zero means no battle can trigger */
         *(volatile float *)(GBWK + 0x1360) = 0.0f;

@@ -46,11 +46,35 @@ static int reward_mult(void)
     return boss_battle() ? 1 : tfo_mode();
 }
 
+/* BadKarma / GoodKarma (field_toggles.c): 1 = the next encounter roll triggers a battle, 2 = an Omoikane one.
+ * The roll (0x11cb90) adds walked distance; each 100 units raises the danger counter (+0x1364) and, once it passes
+ * the area's threshold, picks a formation and returns area<<24 | index<<16 | formation (also kept at gp-0x6230).
+ * Forcing it: a full 100 units and danger at the maximum. Areas without encounters return 0 as usual.
+ * Omoikane: formations 0x30b..0x30d (one or two of the regular, big-reward Omoikane, species 0x62). */
+int karma_force;
+int karma_none;            /* set when a forced roll found no encounters here (the field shows a message) */
+#define ENC_RESULT   RD32(GP - 0x6230)
+#define f_rand       ((int (*)(int, int))0x002e83f8)  /* 0..n-1 */
+
 /* encounter step (0x124d1c, 0x124d48, 0x216228) */
 u32 tfo_enc(float dist, u32 area)
 {
-    int n = tfo_mode();
-    return f_enc(n > 1 ? dist / (float)n : dist, area);
+    int force = karma_force;
+    if (force) {
+        if (area) karma_force = 0;
+        *(volatile u16 *)(GBWK + 0x1364) = 65000;
+        if (dist < 100.0f) dist = 100.0f;
+    } else {
+        int n = tfo_mode();
+        if (n > 1) dist /= (float)n;
+    }
+    u32 r = f_enc(dist, area);
+    if (force && area && !r) karma_none = 1;           /* this area has no random encounters */
+    if (force == 2 && r) {
+        r = (r & 0xffff0000u) | (0x30bu + (u32)f_rand(0, 3));
+        ENC_RESULT = r;
+    }
+    return r;
 }
 
 /* per-enemy battle totals (0x1d0338): EXP +0x2c8, atma +0x2cc, macca +0x2c0 */

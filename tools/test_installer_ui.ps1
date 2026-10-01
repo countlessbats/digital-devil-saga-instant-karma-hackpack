@@ -1,7 +1,7 @@
 # Opens the packaged setup window for a few seconds (topmost), optionally pre-selects a disc image, saves a
 # screenshot of the window to %TEMP%\gk_setup.png and closes it. Nothing is installed.
 param([Parameter(Mandatory)][string]$Package, [string]$Iso)
-$script = Join-Path $Package 'GoodKarma\GoodKarma-Setup.ps1'
+$script = Join-Path $Package 'InstantKarma\InstantKarma-Setup.ps1'
 $src = [IO.File]::ReadAllText($script)
 $hook = @"
 `$form.TopMost = `$true
@@ -20,7 +20,7 @@ $hook = @"
 [void]`$form.ShowDialog()
 "@
 $src = $src.Replace('[void]$form.ShowDialog()', $hook)
-$tmp = Join-Path $Package 'GoodKarma\_uitest.ps1'
+$tmp = Join-Path $Package 'InstantKarma\_uitest.ps1'
 [IO.File]::WriteAllText($tmp, $src, (New-Object System.Text.UTF8Encoding($true)))
 try { & $tmp } finally { Remove-Item -LiteralPath $tmp -Force }
 Get-Content (Join-Path $env:TEMP 'gk_setup.txt')

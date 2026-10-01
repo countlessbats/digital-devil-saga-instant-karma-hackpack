@@ -1,6 +1,6 @@
-r"""Install Good Karma into a PCSX2 user folder.
+r"""Install Instant Karma into a PCSX2 user folder.
 
-Usage: python tools/install.py [PCSX2_USER_DIR] [--no-turbo] [--no-set] [--no-prey] [--no-buttons] [--no-subtle] [--no-sun] [--no-wordtripper] [--no-twoforone] [--no-quickstart] [--no-sceneskip] [--no-openchests]   (default <local path>)
+Usage: python tools/install.py [PCSX2_USER_DIR] [--no-turbo] [--no-set] [--no-prey] [--no-buttons] [--no-subtle] [--no-sun] [--no-wordtripper] [--no-twoforone] [--no-quickstart] [--no-sceneskip] [--no-openchests] [--no-badkarma] [--no-goodkarma]   (default <local path>)
 Copies patches\SLUS-20974_D7273511.pnach, removes this project's older patches\D7273511.pnach,
 enables the chosen patches in gamesettings\SLUS-20974_D7273511.ini ([Patches] Enable = ...)
 and sets EmuCore/Speedhacks EECycleRate = 3 there (needed for full 6x turbo). Other keys are kept.
@@ -16,8 +16,8 @@ flags = [a for a in sys.argv[1:] if a.startswith('--')]
 user = args[0] if args else r'<local path>'
 if not os.path.isdir(os.path.join(user, 'patches')) or not os.path.isdir(os.path.join(user, 'inis')):
     raise SystemExit('not a PCSX2 user folder: ' + user)
-want = [build.PATCH_TURBO, build.PATCH_SET, build.PATCH_PREY, build.PATCH_BB, build.PATCH_SK, build.PATCH_SUN, build.PATCH_WT, build.PATCH_TFO, build.PATCH_QS, build.PATCH_SKIP, build.PATCH_CHEST]
-skip = {'--no-turbo': build.PATCH_TURBO, '--no-set': build.PATCH_SET, '--no-prey': build.PATCH_PREY, '--no-buttons': build.PATCH_BB, '--no-subtle': build.PATCH_SK, '--no-sun': build.PATCH_SUN, '--no-wordtripper': build.PATCH_WT, '--no-twoforone': build.PATCH_TFO, '--no-quickstart': build.PATCH_QS, '--no-sceneskip': build.PATCH_SKIP, '--no-openchests': build.PATCH_CHEST}
+want = [build.PATCH_TURBO, build.PATCH_SET, build.PATCH_PREY, build.PATCH_BB, build.PATCH_SK, build.PATCH_SUN, build.PATCH_WT, build.PATCH_TFO, build.PATCH_QS, build.PATCH_SKIP, build.PATCH_CHEST, build.PATCH_BADK, build.PATCH_GOODK]
+skip = {'--no-turbo': build.PATCH_TURBO, '--no-set': build.PATCH_SET, '--no-prey': build.PATCH_PREY, '--no-buttons': build.PATCH_BB, '--no-subtle': build.PATCH_SK, '--no-sun': build.PATCH_SUN, '--no-wordtripper': build.PATCH_WT, '--no-twoforone': build.PATCH_TFO, '--no-quickstart': build.PATCH_QS, '--no-sceneskip': build.PATCH_SKIP, '--no-openchests': build.PATCH_CHEST, '--no-badkarma': build.PATCH_BADK, '--no-goodkarma': build.PATCH_GOODK}
 want = [w for w in want if w not in [skip[f] for f in flags if f in skip]]
 
 shutil.copy(os.path.join(ROOT, 'build', build.PNACH), os.path.join(user, 'patches', build.PNACH))
@@ -40,10 +40,10 @@ for line in text.splitlines():
 def ensure(sec):
     if sec not in secs: secs[sec] = []; order.append(sec)
 ensure('Patches')
-secs['Patches'] = [l for l in secs['Patches'] if not re.match(r'Enable\s*=\s*Good Karma', l)] + ['Enable = ' + w for w in want]
+secs['Patches'] = [l for l in secs['Patches'] if not re.match(r'Enable\s*=\s*(Good|Instant) Karma', l)] + ['Enable = ' + w for w in want]
 ensure('EmuCore/Speedhacks')
 secs['EmuCore/Speedhacks'] = [l for l in secs['EmuCore/Speedhacks'] if not l.startswith('EECycleRate')] + ['EECycleRate = 3']
 with open(ini, 'w') as f:
     for s in order:
         f.write('[%s]\n' % s + ''.join(l + '\n' for l in secs[s]) + '\n')
-print('installed Good Karma (%s) into %s' % (', '.join(want), user))
+print('installed Instant Karma (%s) into %s' % (', '.join(want), user))

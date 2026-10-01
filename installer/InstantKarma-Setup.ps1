@@ -1,13 +1,13 @@
-# Good Karma v@@VERSION@@ setup for PCSX2 2.x (Windows PowerShell 5.1+).
+# Instant Karma v@@VERSION@@ setup for PCSX2 2.x (Windows PowerShell 5.1+).
 #   Install.bat runs this with no arguments: the setup window.
-#   The uninstaller placed in <PCSX2 data>\goodkarma runs it with -Uninstall -DataRoot <folder>.
+#   The uninstaller placed in <PCSX2 data>\instantkarma runs it with -Uninstall -DataRoot <folder>.
 # What it changes, and all the uninstaller removes:
-#   <patches>\SLUS-20974_D7273511_GoodKarma.pnach                     (the mods)
-#   <gamesettings>\SLUS-20974_D7273511.ini  [Patches] "Enable = Good Karma - ..." lines (other lines are kept;
-#                                                                      a backup of the original goes to goodkarma\backup)
+#   <patches>\SLUS-20974_D7273511_InstantKarma.pnach                     (the mods)
+#   <gamesettings>\SLUS-20974_D7273511.ini  [Patches] "Enable = Instant Karma - ..." lines (other lines are kept;
+#                                                                      a backup of the original goes to instantkarma\backup)
 #   <gamesettings>\SLUS-20974_D7273511.ini  [EmuCore/Speedhacks] EECycleRate = 3 while Native Turbo is on
 #                                                                      (the earlier value is restored)
-#   <PCSX2 data>\goodkarma\                                            (this script, uninstaller, backups, state)
+#   <PCSX2 data>\instantkarma\                                            (this script, uninstaller, backups, state)
 param([switch]$Uninstall, [string]$DataRoot)
 
 $ErrorActionPreference = 'Stop'
@@ -18,14 +18,14 @@ try { Add-Type -Name Dpi -Namespace GkNative -MemberDefinition '[DllImport("user
 $Version   = '@@VERSION@@'
 $Serial    = 'SLUS-20974'
 $Crc       = 'D7273511'
-$PnachName = "${Serial}_${Crc}_GoodKarma.pnach"
+$PnachName = "${Serial}_${Crc}_InstantKarma.pnach"
 $IniName   = "${Serial}_${Crc}.ini"
-$Prefix    = 'Good Karma - '
+$Prefix    = 'Instant Karma - '
 $Here      = Split-Path -Parent $MyInvocation.MyCommand.Path
 $Utf8      = New-Object System.Text.UTF8Encoding($false)
 
 function Show-Msg([string]$text, [string]$icon = 'Information', [string]$buttons = 'OK') {
-    [System.Windows.Forms.MessageBox]::Show($text, "Good Karma v$Version", $buttons, $icon)
+    [System.Windows.Forms.MessageBox]::Show($text, "Instant Karma v$Version", $buttons, $icon)
 }
 
 # ---- disc image check: reads SYSTEM.CNF and the boot ELF from an ISO 9660 image, ELF CRC as PCSX2 computes it --
@@ -102,7 +102,7 @@ function Test-GameImage([string]$path) {
         return @{ Ok = $null; Text = "Couldn't read the image ($($e.Message))." }
     }
     if ($id -eq "$Serial $Crc") { return @{ Ok = $true; Text = "Verified: Digital Devil Saga (USA), $Serial, CRC $Crc." } }
-    return @{ Ok = $false; Text = "This is $id, not Digital Devil Saga USA ($Serial $Crc). Good Karma only works with the USA release." }
+    return @{ Ok = $false; Text = "This is $id, not Digital Devil Saga USA ($Serial $Crc). Instant Karma only works with the USA release." }
 }
 
 # ---- PCSX2 data folder ------------------------------------------------------------------------------------------
@@ -157,7 +157,7 @@ function Find-DataRoots {
 
 # ---- install state -----------------------------------------------------------------------------------------------
 function Get-Sections([string]$pnachPath) {
-    # -> ordered list of @{ Name; Title; Description } from the pnach's [Good Karma - ...] sections
+    # -> ordered list of @{ Name; Title; Description } from the pnach's [Instant Karma - ...] sections
     $list = New-Object System.Collections.Generic.List[object]; $cur = $null
     foreach ($line in [IO.File]::ReadAllLines($pnachPath)) {
         if ($line -match '^\[(.+)\]$') { $cur = @{ Name = $Matches[1]; Title = $Matches[1].Replace($Prefix, ''); Description = '' }; $list.Add($cur) }
@@ -194,7 +194,7 @@ function Add-BeforeTrailingBlanks($list, [string[]]$items) {
 }
 
 function Set-EnableLines([string]$ini, [string[]]$names, [string]$backupDir) {
-    # Rewrites only the "Enable = Good Karma - ..." lines of [Patches]; every other line is kept as it was.
+    # Rewrites only the "Enable = Instant Karma - ..." lines of [Patches]; every other line is kept as it was.
     $lines = @(); if (Test-Path -LiteralPath $ini) { $lines = [IO.File]::ReadAllLines($ini) }
     if ($backupDir -and (Test-Path -LiteralPath $ini)) {
         $bak = Join-Path $backupDir "$IniName.original"
@@ -248,52 +248,52 @@ function Set-IniKey([string]$ini, [string]$section, [string]$key, $value) {
 }
 
 # Native Turbo's 6x needs EE Cycle Rate 300% (EmuCore/Speedhacks EECycleRate = 3) for this game. The installer sets
-# it while Native Turbo is on and remembers the earlier value in goodkarma\state.ini, to put back when Native Turbo
-# is turned off or Good Karma is removed.
+# it while Native Turbo is on and remembers the earlier value in instantkarma\state.ini, to put back when Native Turbo
+# is turned off or Instant Karma is removed.
 function Set-TurboCycleRate([string]$root, [bool]$on) {
     $ini = Join-Path (Get-Pcsx2Folder $root 'GameSettings' 'gamesettings') $IniName
-    $state = Join-Path $root 'goodkarma\state.ini'
-    $saved = Read-IniValue $state 'GoodKarma' 'EECycleRateBefore'
+    $state = Join-Path $root 'instantkarma\state.ini'
+    $saved = Read-IniValue $state 'InstantKarma' 'EECycleRateBefore'
     if ($on) {
         $cur = Read-IniValue $ini 'EmuCore/Speedhacks' 'EECycleRate'
         if ($cur -ne '3') {
-            if ($saved -eq $null) { Set-IniKey $state 'GoodKarma' 'EECycleRateBefore' $(if ($cur -eq $null) { 'unset' } else { $cur }) }
+            if ($saved -eq $null) { Set-IniKey $state 'InstantKarma' 'EECycleRateBefore' $(if ($cur -eq $null) { 'unset' } else { $cur }) }
             Set-IniKey $ini 'EmuCore/Speedhacks' 'EECycleRate' '3'
         }
     } elseif ($saved -ne $null) {
         Set-IniKey $ini 'EmuCore/Speedhacks' 'EECycleRate' $(if ($saved -eq 'unset') { $null } else { $saved })
-        Set-IniKey $state 'GoodKarma' 'EECycleRateBefore' $null
+        Set-IniKey $state 'InstantKarma' 'EECycleRateBefore' $null
     }
 }
 
-function Install-GoodKarma([string]$root, [string[]]$names) {
+function Install-InstantKarma([string]$root, [string[]]$names) {
     $patches = Get-Pcsx2Folder $root 'Patches' 'patches'
     $gs = Get-Pcsx2Folder $root 'GameSettings' 'gamesettings'
-    $gk = Join-Path $root 'goodkarma'; $backup = Join-Path $gk 'backup'
+    $gk = Join-Path $root 'instantkarma'; $backup = Join-Path $gk 'backup'
     New-Item -ItemType Directory -Force -Path $patches, $gs, $backup | Out-Null
-    # an older Good Karma patch file under the game's plain name (manual installs) would load twice: move it aside
+    # an older Instant Karma patch file under the game's plain name (manual installs) would load twice: move it aside
     $legacy = Join-Path $patches "${Serial}_${Crc}.pnach"
-    if ((Test-Path -LiteralPath $legacy) -and ([IO.File]::ReadAllText($legacy) -match 'author=Good Karma')) {
+    if ((Test-Path -LiteralPath $legacy) -and ([IO.File]::ReadAllText($legacy) -match 'author=(Good|Instant) Karma')) {
         Move-Item -LiteralPath $legacy -Destination (Join-Path $backup "${Serial}_${Crc}.pnach.old") -Force
     }
     Write-TextAtomic (Join-Path $patches $PnachName) ([IO.File]::ReadAllText((Join-Path $Here $PnachName)))
     Set-EnableLines (Join-Path $gs $IniName) $names $backup
     Set-TurboCycleRate $root ($names -contains "${Prefix}Native Turbo")
     # uninstaller in the data folder (this script + a launcher), unless we are running from there already
-    $self = Join-Path $Here 'GoodKarma-Setup.ps1'; $dest = Join-Path $gk 'GoodKarma-Setup.ps1'
+    $self = Join-Path $Here 'InstantKarma-Setup.ps1'; $dest = Join-Path $gk 'InstantKarma-Setup.ps1'
     if ([IO.Path]::GetFullPath($self) -ne [IO.Path]::GetFullPath($dest)) { Copy-Item -LiteralPath $self -Destination $dest -Force }
-    $bat = "@echo off`r`nrem Removes Good Karma from this PCSX2 data folder.`r`n" +
-           "`"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe`" -NoProfile -ExecutionPolicy Bypass -STA -WindowStyle Hidden -File `"%~dp0GoodKarma-Setup.ps1`" -Uninstall -DataRoot `"%~dp0..`"`r`n"
-    [IO.File]::WriteAllText((Join-Path $gk 'Uninstall Good Karma.bat'), $bat, (New-Object System.Text.ASCIIEncoding))
+    $bat = "@echo off`r`nrem Removes Instant Karma from this PCSX2 data folder.`r`n" +
+           "`"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe`" -NoProfile -ExecutionPolicy Bypass -STA -WindowStyle Hidden -File `"%~dp0InstantKarma-Setup.ps1`" -Uninstall -DataRoot `"%~dp0..`"`r`n"
+    [IO.File]::WriteAllText((Join-Path $gk 'Uninstall Instant Karma.bat'), $bat, (New-Object System.Text.ASCIIEncoding))
 }
 
-function Uninstall-GoodKarma([string]$root) {
+function Uninstall-InstantKarma([string]$root) {
     $pn = Join-Path (Get-Pcsx2Folder $root 'Patches' 'patches') $PnachName
-    if ((Test-Path -LiteralPath $pn) -and ([IO.File]::ReadAllText($pn) -match 'author=Good Karma')) { Remove-Item -LiteralPath $pn -Force }
+    if ((Test-Path -LiteralPath $pn) -and ([IO.File]::ReadAllText($pn) -match 'author=Instant Karma')) { Remove-Item -LiteralPath $pn -Force }
     $ini = Join-Path (Get-Pcsx2Folder $root 'GameSettings' 'gamesettings') $IniName
     if (Test-Path -LiteralPath $ini) { Set-EnableLines $ini @() $null }
     Set-TurboCycleRate $root $false
-    $gk = Join-Path $root 'goodkarma'
+    $gk = Join-Path $root 'instantkarma'
     if (Test-Path -LiteralPath $gk) {
         # the folder may hold this running script: remove it once this process has exited
         $cmd = "ping -n 3 127.0.0.1 >nul & rd /s /q `"$gk`""
@@ -315,22 +315,22 @@ if ($Uninstall) {
     try {
         $root = [IO.Path]::GetFullPath($DataRoot)
         if (-not (Test-DataRoot $root)) { Show-Msg "Not a PCSX2 data folder:`n$root" 'Error'; exit 1 }
-        if ((Show-Msg "Remove Good Karma from`n$root ?" 'Question' 'YesNo') -ne 'Yes') { exit 0 }
+        if ((Show-Msg "Remove Instant Karma from`n$root ?" 'Question' 'YesNo') -ne 'Yes') { exit 0 }
         if (-not (Wait-Pcsx2Closed)) { exit 0 }
-        Uninstall-GoodKarma $root
-        Show-Msg 'Good Karma was removed.'
+        Uninstall-InstantKarma $root
+        Show-Msg 'Instant Karma was removed.'
     } catch { Show-Msg "Uninstall failed:`n$($_.Exception.Message)" 'Error' }
     exit 0
 }
 
 # ---- setup window -------------------------------------------------------------------------------------------------
-$mutex = New-Object System.Threading.Mutex($false, 'Local\GoodKarmaSetup')
+$mutex = New-Object System.Threading.Mutex($false, 'Local\InstantKarmaSetup')
 if (-not $mutex.WaitOne(0)) { exit 0 }                  # already open
 
 try {
 $modules = Get-Sections (Join-Path $Here $PnachName)
 $form = New-Object System.Windows.Forms.Form
-$form.Text = "Good Karma v$Version setup"
+$form.Text = "Instant Karma v$Version setup"
 $form.AutoScaleMode = 'Dpi'
 $form.Font = New-Object System.Drawing.Font('Segoe UI', 9)
 $form.ClientSize = New-Object System.Drawing.Size(720, 780)
@@ -389,7 +389,7 @@ $note = New-Label ''; $note.ForeColor = [System.Drawing.Color]::DarkGoldenrod; $
 # buttons
 $btnRow = New-Object System.Windows.Forms.FlowLayoutPanel; $btnRow.FlowDirection = 'RightToLeft'; $btnRow.AutoSize = $true; $btnRow.Dock = 'Top'
 $installBtn = New-Object System.Windows.Forms.Button; $installBtn.Text = 'Install'; $installBtn.AutoSize = $true
-$removeBtn = New-Object System.Windows.Forms.Button; $removeBtn.Text = 'Remove Good Karma'; $removeBtn.AutoSize = $true
+$removeBtn = New-Object System.Windows.Forms.Button; $removeBtn.Text = 'Remove Instant Karma'; $removeBtn.AutoSize = $true
 $allBtn = New-Object System.Windows.Forms.Button; $allBtn.Text = 'Select all'; $allBtn.AutoSize = $true
 $noneBtn = New-Object System.Windows.Forms.Button; $noneBtn.Text = 'Select none'; $noneBtn.AutoSize = $true
 $btnRow.Controls.AddRange(@($installBtn, $removeBtn, $noneBtn, $allBtn)); $layout.Controls.Add($btnRow)
@@ -408,9 +408,9 @@ function Update-Ui {
     $rootOk = Test-DataRoot $root
     if (-not $root) { $rootStatus.Text = 'No PCSX2 data folder found. Run PCSX2 once, or click Browse and pick the folder that contains "inis".' }
     elseif (-not $rootOk) { $rootStatus.Text = 'This folder has no inis\PCSX2.ini. Pick the PCSX2 data folder (PCSX2: Tools > Open Data Directory).' }
-    elseif (Test-Installed $root) { $rootStatus.Text = 'Good Karma is installed here. Install again to change modules or update.' }
-    elseif (Test-Path -LiteralPath (Join-Path (Get-Pcsx2Folder $root 'Patches' 'patches') "${Serial}_${Crc}.pnach")) { $rootStatus.Text = 'Good Karma will be added here. A patch file under the game''s plain name was found; if it is an older Good Karma it is moved to goodkarma\backup, otherwise it is left alone.' }
-    else { $rootStatus.Text = 'Good Karma will be added here.' }
+    elseif (Test-Installed $root) { $rootStatus.Text = 'Instant Karma is installed here. Install again to change modules or update.' }
+    elseif (Test-Path -LiteralPath (Join-Path (Get-Pcsx2Folder $root 'Patches' 'patches') "${Serial}_${Crc}.pnach")) { $rootStatus.Text = 'Instant Karma will be added here. A patch file under the game''s plain name was found; if it is an older Instant Karma it is moved to instantkarma\backup, otherwise it is left alone.' }
+    else { $rootStatus.Text = 'Instant Karma will be added here.' }
     $removeBtn.Enabled = $rootOk -and (Test-Installed $root)
     $any = @($checks.Values | Where-Object { $_.Checked }).Count -gt 0
     $installBtn.Enabled = $rootOk -and $state.RomChecked -and ($state.RomOk -ne $false) -and $any
@@ -463,18 +463,18 @@ $installBtn.Add_Click({
     if (-not (Wait-Pcsx2Closed)) { return }
     $names = @($modules | Where-Object { $checks[$_.Name].Checked } | ForEach-Object { $_.Name })
     try {
-        Install-GoodKarma $root $names
+        Install-InstantKarma $root $names
         Update-Ui
-        Show-Msg ("Good Karma v$Version is installed in`n$root`n`nModules on: " + (($names | ForEach-Object { $_.Replace($Prefix, '') }) -join ', ') +
+        Show-Msg ("Instant Karma v$Version is installed in`n$root`n`nModules on: " + (($names | ForEach-Object { $_.Replace($Prefix, '') }) -join ', ') +
                   "`n`nStart the game in PCSX2. To change modules later, run Install.bat again or use the game's Properties > Patches in PCSX2." +
-                  "`n`nTo uninstall: goodkarma\Uninstall Good Karma.bat in that folder.")
+                  "`n`nTo uninstall: instantkarma\Uninstall Instant Karma.bat in that folder.")
     } catch { Show-Msg "Install failed:`n$($_.Exception.Message)" 'Error' }
 })
 $removeBtn.Add_Click({
     $root = [IO.Path]::GetFullPath($rootBox.Text.Trim().Trim('"'))
-    if ((Show-Msg "Remove Good Karma from`n$root ?" 'Question' 'YesNo') -ne 'Yes') { return }
+    if ((Show-Msg "Remove Instant Karma from`n$root ?" 'Question' 'YesNo') -ne 'Yes') { return }
     if (-not (Wait-Pcsx2Closed)) { return }
-    try { Uninstall-GoodKarma $root; Update-Ui; Show-Msg 'Good Karma was removed.' } catch { Show-Msg "Remove failed:`n$($_.Exception.Message)" 'Error' }
+    try { Uninstall-InstantKarma $root; Update-Ui; Show-Msg 'Instant Karma was removed.' } catch { Show-Msg "Remove failed:`n$($_.Exception.Message)" 'Error' }
 })
 
 $roots = Find-DataRoots
@@ -484,5 +484,5 @@ if ($roots.Count -gt 1) { $rootStatus.Text = "Found $($roots.Count) PCSX2 data f
 
 [void]$form.ShowDialog()
 } catch {
-    Show-Msg "Good Karma setup hit an error:`n$($_.Exception.Message)" 'Error'
+    Show-Msg "Instant Karma setup hit an error:`n$($_.Exception.Message)" 'Error'
 } finally { $mutex.ReleaseMutex() }
