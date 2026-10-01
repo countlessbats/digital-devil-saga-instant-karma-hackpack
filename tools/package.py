@@ -17,15 +17,17 @@ PNACH_OUT = 'SLUS-20974_D7273511_InstantKarma.pnach'
 # player-facing order and descriptions (section names stay as they are: PCSX2 settings refer to them)
 MODULES = [
     (build.PATCH_PREY, 'A complete combat UI overhaul. Discover enemy weaknesses by experiment or by killing them, '
-                       'then see them represented in a board and in targeting reticles. See buff and debuff stacks. '
+                       'then see them represented in a board and in targeting reticles, and previewed on enemies '
+                       'as you browse skills. See buff and debuff stacks. '
                        "Inspired by SMTV's system."),
-    (build.PATCH_TURBO, 'Speed up time without distorting audio. Hold L2/R2 for 3x/6x, click L3/R3 to toggle 3x/6x.'),
-    (build.PATCH_SET, 'Increases the SET screen width to 3 columns and adds ALPHABETICAL and PRICE sort modes on START.'),
+    (build.PATCH_TURBO, 'Speed up time without distorting audio. Hold R2/L2 for 3x/6x, click R3/L3 to toggle 3x/6x. '
+                        'Paused while the main menu is open.'),
+    (build.PATCH_SET, 'Increases the SET screen width to 3 columns and adds COST and ALPHABETICAL sort modes on START.'),
     (build.PATCH_BB, 'In combat, R1 quick-passes your turn, and L1 quick-attempts to escape.'),
     (build.PATCH_SK, 'Press up on the d-pad to toggle encounters.'),
     (build.PATCH_SUN, 'Press down on the d-pad to cycle sun state between min and max.'),
     (build.PATCH_BADK, 'Press right on the d-pad to instantly start a fight. TwoForOne reward bonuses apply.'),
-    (build.PATCH_GOODK, 'Press left on the d-pad to instantly start a rare Omoikane fight. TwoForOne reward bonuses apply.'),
+    (build.PATCH_GOODK, 'Press left on the d-pad to instantly start a rare fight against a lone Omoikane. TwoForOne reward bonuses apply.'),
     (build.PATCH_TFO, 'Press SELECT to adjust combat frequency and rewards, from 1/2 to 1/5 as many; when you have '
                       'fewer encounters, you get equal-proportionately more rewards. Affects experience, atma, macca '
                       'and item drop rates--drop rates over 100% give a chance for extra items. No effect on bosses.'),

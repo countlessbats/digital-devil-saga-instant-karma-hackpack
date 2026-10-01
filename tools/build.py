@@ -152,7 +152,7 @@ PATCH_BADK = 'Instant Karma - BadKarma'
 PATCH_GOODK = 'Instant Karma - GoodKarma'
 ATLAS_ADDR = 0x000A0000
 
-def build(include_test=False):
+def build(include_test=False, include_local=False):
     lines = ['gametitle=Shin Megami Tensei: Digital Devil Saga (USA) [SLUS-20974] (D7273511)', '',
              '[%s]' % PATCH_TURBO,
              'author=Instant Karma v%s' % VERSION,
@@ -163,7 +163,7 @@ def build(include_test=False):
         lines.append('patch=1,EE,%08X,word,%08X' % (TURBO_CODE + 4 * i, w))
     lines.append('patch=1,EE,%08X,word,%08X' % (HOOK_SITE, jal(TURBO_CODE)))
     # ---- C mods (src/*.c): the code blob is emitted in every section that uses it ----
-    segs, syms = cbuild.build(include_test)
+    segs, syms = cbuild.build(include_test, include_local)
     def blob(dst):
         for addr, data in segs:
             data = data + b'\0' * (-len(data) % 4)
@@ -272,6 +272,12 @@ def build(include_test=False):
               'description=Text appears all at once, fading in together instead of letter by letter.']
     lines.append('patch=1,EE,00195664,word,00000000')   # no per-line wait (bne v1,v0)
     lines.append('patch=1,EE,0019566C,word,0000102D')   # previous-glyph alpha check -> always pass
+    # ---- extra sections kept outside the repository (local/sections.py), if present ----
+    if include_local:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location('local_sections', os.path.join(ROOT, 'local', 'sections.py'))
+        mod = importlib.util.module_from_spec(spec); spec.loader.exec_module(mod)
+        mod.add(lines, blob, hook, syms, VERSION)
     build.syms = syms
     return '\n'.join(lines) + '\n', words
 
@@ -281,6 +287,12 @@ if __name__ == '__main__':
     out = os.path.join(ROOT, 'build', PNACH)
     open(out, 'w').write(text)
     print('v%s: %d words of turbo code -> %s' % (VERSION, len(words), out))
+    if os.path.exists(os.path.join(ROOT, 'local', 'sections.py')):
+        text, _ = build(include_local=True)
+        os.makedirs(os.path.join(ROOT, 'local', 'build'), exist_ok=True)
+        out = os.path.join(ROOT, 'local', 'build', PNACH)
+        open(out, 'w').write(text)
+        print('with local sections ->', out)
     args = sys.argv[1:]
     while args:
         if args[0] == '--install':
