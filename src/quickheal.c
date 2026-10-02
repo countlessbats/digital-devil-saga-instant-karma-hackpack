@@ -8,6 +8,11 @@
  * facility(900), the party is healed and paid for and the script carries on after the facility call, so the
  * screen never fades and no menu opens. Every other fade runs the game's own command (0x10d908).
  *
+ * Large Karma Terminals (and a recovery terminal whose script doesn't match) open the terminal itself: the game
+ * mode's start (0x10a928) runs the facility prelude (0x2354d8) and opens the menu (0x249fa8, mode, arg): mode 0
+ * Large, 1 Small, 2 recovery-only. The pnach sends 0x10a928 here; for modes 0 and 2 the party is healed and paid
+ * for just before the menu opens, so its Recover option comes up greyed out. Nothing happens if nobody needs it.
+ *
  * Script code is an array of words: low half opcode (0x1d push, 0x08 call command), high half operand. The
  * interpreter (0x10c7f8) keeps its context at 0x3bd78c: +0x18 instruction index, +0xbc code.
  *
@@ -25,6 +30,10 @@
 #define f_heal        ((void (*)(u32))0x0024a2b8)
 #define f_money_add   ((void (*)(int))0x001198b8)
 #define f_se          ((void (*)(u32, int, int))0x002e8f78)
+#define f_prelude     ((void (*)(void))0x002354d8)
+#define f_term_open   ((void (*)(u32, u32))0x00249fa8)
+#define TERM_LARGE    0
+#define TERM_RECOVERY 2
 #define f_script_arg  ((int (*)(int))0x0010d428)
 #define f_cmd_frames  ((int (*)(void))0x0010d680)     /* frames since the current command started */
 #define f_fade        ((int (*)(void))0x0010d908)     /* script command 16: fade(to, frames) */
@@ -40,7 +49,7 @@
 
 static u32 member(int i) { return GBWK + i * 0x1a4 + 0xa60; }
 
-static void heal_party(void)
+static void heal_party(int quiet)
 {
     int cost[5], total = 0;
     for (int i = 0; i < 5; i++) {
@@ -56,7 +65,7 @@ static void heal_party(void)
         paid += cost[i];
         healed++;
     }
-    if (!healed) { f_se(SE_NONE, 0x7f, 0x3f); return; }
+    if (!healed) { if (!quiet) f_se(SE_NONE, 0x7f, 0x3f); return; }
     f_money_add(-paid);
     f_se(SE_HEAL, 0x7f, 0x3f);
 }
@@ -74,11 +83,20 @@ int qh_fade(void)
     if (FEATURES[13] && f_cmd_frames() == 0 && f_script_arg(0) == 0
         && op(code, pc + 1, OP_PUSH, -1) && op(code, pc + 2, OP_CALL, CMD_WAIT)
         && op(code, pc + 3, OP_PUSH, EV_RECOVERY) && op(code, pc + 4, OP_CALL, CMD_FACILITY)) {
-        heal_party();
+        heal_party(0);
         f_enc_reset();
         f_field_on(FIELD_PLAYER);                 /* the terminal gives control back by restarting the field */
         *(volatile u32 *)(ctx + 0x18) = pc + 5;   /* the interpreter pops the fade's arguments and goes on from here */
         return 1;
     }
     return f_fade();
+}
+
+/* Replaces the terminal mode's start (0x10a928); args is {mode, arg}, or 0 for a Large Terminal. */
+void qh_term_open(u32 a0, u32 args)
+{
+    u32 mode = args ? RD32(args) : TERM_LARGE, arg = args ? RD32(args + 4) : 1;
+    if (FEATURES[13] && (mode == TERM_LARGE || mode == TERM_RECOVERY)) heal_party(1);
+    f_prelude();
+    f_term_open(mode, arg);
 }

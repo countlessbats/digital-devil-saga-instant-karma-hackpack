@@ -310,12 +310,14 @@ def build(include_test=False, include_local=False):
               'description=Text appears all at once, fading in together instead of letter by letter.']
     lines.append('patch=1,EE,00195664,word,00000000')   # no per-line wait (bne v1,v0)
     lines.append('patch=1,EE,0019566C,word,0000102D')   # previous-glyph alpha check -> always pass
-    # ---- QuickHeal: a recovery terminal heals the party at once (menu price for everyone), no menu ----
+    # ---- QuickHeal: recovery terminals heal at once with no menu, Karma Terminals as their menu opens ----
     lines += ['', '[%s]' % PATCH_QH, 'author=Instant Karma v%s' % VERSION,
-              'description=Inspecting a recovery terminal heals the party at once (same price as the menu), no menu.']
+              'description=Recovery terminals heal the party at once with no menu; Karma Terminals heal it as their menu opens. Same price as the menu.']
     blob(lines)
     lines.append('patch=1,EE,000FD234,word,00000001')            # FEATURES[13]: QuickHeal on
     lines.append('patch=1,EE,0039E308,word,%08X' % syms['qh_fade'])    # script command 16 (fade)
+    lines.append('patch=1,EE,0010A928,word,%08X' % (0x08000000 | (syms['qh_term_open'] >> 2)))   # terminal opens: j qh_term_open
+    lines.append('patch=1,EE,0010A92C,word,00000000')
     # ---- Widescreen: 16:9 camera (the camera aspect constant) with the 2D interface kept at 4:3 proportions ----
     lines += ['', '[%s]' % PATCH_WS, 'author=Instant Karma v%s' % VERSION,
               'description=16:9 widescreen: wider 3D view; menus and text keep their shape.',
