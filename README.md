@@ -5,6 +5,14 @@ All the mods live in one patch file and can be switched on or off independently 
 
 ## Mods
 
+### Prey Eyes
+Battle information, adapted from the Prey Eyes 2 mod for SMT III Nocturne HD:
+- **Reticle result:** while targeting, the centre of the reticle shows what the selected skill will do to that enemy and pulses with it: green **!** weak, red icons for null, reflect and drain, a split shield for resist, the game's own ring in white for a normal hit, and a white **?** when you don't know yet. Support skills leave the reticle unchanged.
+- **Skill preview:** in the command menu, hovering Attack or a skill marks every enemy with the result it would have, as the reticle's result icon alone: only known weak, resist, null, reflect and drain results show. Choosing the skill hands over to the full reticle on the enemy you target.
+- **Affinity board:** above the targeted enemy's name: all nine elements (Phys, Gun, Fire, Ice, Elec, Force, Earth, Expel, Death) with their results, and above them the ailments (Charm, Poison, Mute, Panic, Sleep) you know the enemy resists, blocks or is weak to. Unknown and normal ones are left out. This row is the enemy's resistance, not its current status.
+- **Buffs and debuffs:** Attack, Magic, Defense and Hit/Evasion levels (-kaja/-nda, up to 4 steps) above each enemy's head (hidden while an attack plays, unless that attack changes buffs) and under each party member's portrait. The help bar moves down slightly to make room.
+- **Knowledge:** affinities start unknown. Using a skill on an enemy teaches that attribute for its species; killing one or using Analyze reveals everything. Knowledge is stored inside your save file, so each save keeps its own.
+
 ### Native Turbo
 Runs the game's own logic faster, instead of fast-forwarding the emulator, so music keeps its normal speed.
 
@@ -15,7 +23,8 @@ Runs the game's own logic faster, instead of fast-forwarding the emulator, so mu
 | R3 | Toggle 3x on/off |
 | L3 | Toggle 6x on/off |
 
-Turbo is off while the main menu is open; a toggle stays remembered and resumes when you close it.
+Turbo is off while the menu is open; a toggle stays remembered and resumes when you close it.
+It also speeds up the Mantra acquisition screen's transitions automatically.
 6x needs **EE Cycle Rate 300%** for this game (the installer sets it; see below to set it by hand). Without it, 6x tops out around 4x.
 
 ### SET Screen
@@ -25,13 +34,8 @@ A redesigned skill SET screen:
 - **START** sorts LEARNED: Game order → Cost → A–Z. The choice sticks across visits and characters until the game restarts.
 - ASSIGNED, HELP and the character status are moved into the corners to make room; the "new skill" marker and cursor arrow sit at the end of each skill name.
 
-### Prey Eyes
-Battle information, adapted from the Prey Eyes 2 mod for SMT III Nocturne HD:
-- **Reticle result:** while targeting, the centre of the reticle shows what the selected skill will do to that enemy and pulses with it: green **!** weak, red icons for null, reflect and drain, a split shield for resist, the game's own ring in white for a normal hit, and a white **?** when you don't know yet. Support skills leave the reticle unchanged.
-- **Skill preview:** in the command menu, hovering Attack or a skill marks every enemy with the result it would have, as the reticle's result icon alone: only known weak, resist, null, reflect and drain results show. Choosing the skill hands over to the full reticle on the enemy you target.
-- **Affinity board:** above the targeted enemy's name: all nine elements (Phys, Gun, Fire, Ice, Elec, Force, Earth, Expel, Death) with their results, and above them the ailments (Charm, Poison, Mute, Panic, Sleep) you know the enemy resists, blocks or is weak to. Unknown and normal ones are left out. This row is the enemy's resistance, not its current status.
-- **Buffs and debuffs:** Attack, Magic, Defense and Hit/Evasion levels (-kaja/-nda, up to 4 steps) above each enemy's head (hidden while an attack plays, unless that attack changes buffs) and under each party member's portrait. The help bar moves down slightly to make room.
-- **Knowledge:** affinities start unknown. Using a skill on an enemy teaches that attribute for its species; killing one or using Analyze reveals everything. Knowledge is stored inside your save file, so each save keeps its own.
+### Widescreen
+16:9 widescreen. The camera shows a wider view, and the 2D interface (menus, text, portraits, the sun gauge, Prey Eyes) is drawn at its original 4:3 proportions instead of being stretched. Battle reticles and Prey Eyes' icons above enemies still line up with them. Enabling it switches PCSX2's aspect ratio to 16:9 for this game. The field minimap is shown as the game draws it, slightly wide, at the right edge.
 
 ### BattleButtons
 In the battle command menu, **R1** passes the turn and **L1** retreats, both instantly with no menu. The **right stick** jumps the current list up or down by 4 entries.
@@ -42,12 +46,6 @@ On the field, **d-pad UP** toggles random encounters off and on, with a system s
 ### SunKing
 On the field, **d-pad DOWN** switches solar noise between MAX and MIN.
 
-### BadKarma
-On the field, **d-pad RIGHT** starts a random battle right away, as if the encounter had just rolled. Areas with no random encounters (safe rooms, many chest rooms) say "No enemies here". TwoForOne's reward bonus applies.
-
-### GoodKarma
-On the field, **d-pad LEFT** starts a rare Omoikane fight (a single Omoikane). Same rules as BadKarma, and TwoForOne's reward bonus applies.
-
 ### TwoForOne
 On the field, **SELECT** cycles 1-for-1 → 2-for-1 → … → 5-for-1 (with a sound and an on-screen message). At N-for-1:
 - random encounters come N times less often;
@@ -56,13 +54,20 @@ On the field, **SELECT** cycles 1-for-1 → 2-for-1 → … → 5-for-1 (with a 
 
 Boss battles are unchanged. The mode is stored in your save.
 
+### BadKarma
+On the field, **d-pad RIGHT** starts a random battle right away, as if the encounter had just rolled. Areas with no random encounters (safe rooms, many chest rooms) say "No enemies here". TwoForOne's reward bonus applies.
+
+### GoodKarma
+On the field, **d-pad LEFT** starts a rare Omoikane fight (a single Omoikane). Same rules as BadKarma, and TwoForOne's reward bonus applies.
+
 ### QuickStart
 While the logos or the intro movie are playing:
-- **any button** skips all of it and lands on the main menu;
-- **START** skips all of it and loads your most recent save (picked by the memory card's save time, or the longest play time if the card has no dates).
+- **any button** skips all of it and lands on the title menu;
+- **START** skips all of it and loads your most recent save straight away, with no title screen or menus (picked by the memory card's save time, or the longest play time if the card has no dates).
 
 ### SceneSkip
-Press **START** during a cutscene to skip it, including scenes the game normally refuses to skip ("This event cannot be skipped."). One press carries on through scenes that follow straight after, until you have control again. The scene's script still runs to the end (fast-forwarded when Native Turbo is on), so story state is exactly as if you had watched it.
+Press **START** during a cutscene to skip it, including scenes the game normally refuses to skip. Pre-rendered movies are cut and the rest of the scene runs at high speed with its subtitles racing by, so story state is exactly as if you had watched it. One press carries on through scenes that follow straight after, until you have control again.
+Skipping stops at choices: pick your answer at normal speed, then press **START** again to carry on. Needs Native Turbo (the installer keeps it on with SceneSkip).
 
 ### OpenChests
 Inspecting a chest (or a floating jewel) opens it straight away: the "A strange object lies on the floor. Touch it?" question and its Yes/No are answered inside the game's own chest script, so they never appear, and the script's pause for the lid animation is skipped: "Obtained ..." comes up straight away and clears like any other message.
@@ -70,8 +75,8 @@ Inspecting a chest (or a floating jewel) opens it straight away: the "A strange 
 ### WordTripper
 All text fades in at once instead of letter by letter.
 
-### Widescreen
-16:9 widescreen. The camera shows a wider view, and the 2D interface (menus, text, portraits, the sun gauge, Prey Eyes) is drawn at its original 4:3 proportions instead of being stretched. Battle reticles and Prey Eyes' icons above enemies still line up with them. Enabling it switches PCSX2's aspect ratio to 16:9 for this game. The field minimap is shown as the game draws it, slightly wide, at the right edge.
+### QuickHeal
+Inspecting a recovery terminal (Life Terminal) heals the whole party at once, with the heal sound and no menu or fade. Large Karma Terminals heal the party as their menu opens, including when you arrive by Teleport, so Restore comes up greyed out. Either way it costs the same macca as healing everyone in the menu; if you can't afford everyone, members are healed in party order while the money lasts. Small Karma Terminals don't heal.
 
 ## Install
 

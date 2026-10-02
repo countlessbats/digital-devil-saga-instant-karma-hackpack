@@ -216,8 +216,8 @@ def build(include_test=False, include_local=False):
     lines = ['gametitle=Shin Megami Tensei: Digital Devil Saga (USA) [SLUS-20974] (D7273511)', '',
              '[%s]' % PATCH_TURBO,
              'author=Instant Karma v%s' % VERSION,
-             'description=Hold R2 = 3x, hold L2 = 6x, R3/L3 toggle 3x/6x. Off in the main menu. '
-             'Music stays normal speed. 6x needs EE Cycle Rate 300%. The Mantra Data cross-fades always run at 6x.']
+             'description=Hold R2 = 3x, hold L2 = 6x, R3/L3 toggle 3x/6x. Off while the menu is open. '
+             "Music stays normal speed. 6x needs EE Cycle Rate 300%. Also automatically speeds up the Mantra acquisition screen's transitions."]
     words = asm(TURBO_ASM, TURBO_CODE)
     for i, w in enumerate(words):
         lines.append('patch=1,EE,%08X,word,%08X' % (TURBO_CODE + 4 * i, w))
@@ -307,7 +307,7 @@ def build(include_test=False, include_local=False):
     hook(lines, 0x001A44C4, syms['tfo_drop'], 'item drop roll')
     # ---- QuickStart: one press skips all logos/intro to the main menu; START loads the most recent save ----
     lines += ['', '[%s]' % PATCH_QS, 'author=Instant Karma v%s' % VERSION,
-              'description=Any button during the logos/intro skips straight to the main menu. START instead goes straight to '
+              'description=Any button during the logos/intro skips straight to the title menu. START instead goes straight to '
               'your most recent save, with no title screen or menus.']
     blob(lines)
     lines.append('patch=1,EE,000FD214,word,00000001')            # FEATURES[5]: QuickStart on
@@ -353,7 +353,7 @@ def build(include_test=False, include_local=False):
     lines.append('patch=1,EE,0019566C,word,0000102D')   # previous-glyph alpha check -> always pass
     # ---- QuickHeal: recovery terminals heal at once with no menu, Karma Terminals as their menu opens ----
     lines += ['', '[%s]' % PATCH_QH, 'author=Instant Karma v%s' % VERSION,
-              'description=Recovery terminals heal the party at once with no menu; Karma Terminals heal it as their menu opens. Same price as the menu.']
+              'description=Recovery terminals heal the party at once with no menu; Large Karma Terminals heal it as they open. Same price as the menu.']
     blob(lines)
     lines.append('patch=1,EE,000FD234,word,00000001')            # FEATURES[13]: QuickHeal on
     lines.append('patch=1,EE,0039E308,word,%08X' % syms['qh_fade'])    # script command 16 (fade)
