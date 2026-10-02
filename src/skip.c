@@ -8,7 +8,11 @@
  * After one START, until the player has control again (or ~1 s passes with no segment playing, e.g. a battle
  * starts), including scenes chained straight after it: each new segment gets START pressed as soon as the
  * game accepts it, and the script steps in between run fast-forwarded (turbo's override, 8 logic passes
- * per frame, when the Native Turbo section is on). A choice ends the skip: the decision is made at normal
+ * per frame, when the Native Turbo section is on). A pre-rendered movie (player task gp-0x46c4) can't be
+ * sped up and would fall behind the frame-timed subtitles, so it is stopped (0x270030, as the game's own
+ * movie skip does); the event carries on without it, behind a black screen at 64 passes per frame (the
+ * script itself can run for minutes; without the Native Turbo section the movie is left alone). A choice
+ * ends the skip: the decision is made at normal
  * speed and START starts skipping again from there. Every choice is opened by 0x19beb0 (field scripts'
  * SELECT commands and the event player alike); the section points its four calls at skip_choice. */
 #include "game.h"
@@ -22,18 +26,20 @@
 
 int hold_black;          /* bit 0: SceneSkip, bit 1: QuickStart autoload (see black_draw) */
 static u32 skip_task;    /* the event task being skipped */
-static int skip_timer, idle;
+static int skip_timer, idle, movie_cut;
 extern u32 field_control_frame;          /* set by the field control step (field_toggles.c) */
 #define FRAME        RD32(0x003ba700u)
 
 static void stop(void)
 {
-    skip_task = 0; idle = 0;
+    skip_task = 0; idle = 0; movie_cut = 0;
     hold_black &= ~1;
     if (RD32(TURBO_CODE)) TURBO_OVR = 0;
 }
 
 
+#define MOVIE_TASK   RD32(GP - 0x46c4)           /* movie player task (0 = none) */
+#define f_movie_stop ((void (*)(void))0x00270030)
 #define f_choice_start ((void (*)(int))0x0019beb0)
 void skip_choice(int win)
 {
@@ -96,6 +102,7 @@ void skip_frame(void)
     if (field_control_frame + 2 >= FRAME && field_control_frame) { stop(); return; }
     if (find_task(0, 0)) idle = 0;
     else if (++idle > 30) { stop(); return; }
-    if (RD32(TURBO_CODE)) TURBO_OVR = 8;
+    if (MOVIE_TASK && RD32(TURBO_CODE)) { f_movie_stop(); movie_cut = 1; hold_black |= 1; }   /* movie: cut it */
+    if (RD32(TURBO_CODE)) TURBO_OVR = movie_cut ? 64 : 8;
     if (find_task(0, 0)) { skip_timer++; press_start(); }            /* segment playing: ask it to skip */
 }
