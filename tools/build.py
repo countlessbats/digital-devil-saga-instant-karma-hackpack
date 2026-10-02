@@ -357,8 +357,8 @@ def build(include_test=False, include_local=False):
     blob(lines)
     lines.append('patch=1,EE,000FD234,word,00000001')            # FEATURES[13]: QuickHeal on
     lines.append('patch=1,EE,0039E308,word,%08X' % syms['qh_fade'])    # script command 16 (fade)
-    lines.append('patch=1,EE,0010A928,word,%08X' % (0x08000000 | (syms['qh_term_open'] >> 2)))   # terminal opens: j qh_term_open
-    lines.append('patch=1,EE,0010A92C,word,00000000')
+    for site in (0x00249E94, 0x0024CB20, 0x0024D5D0):
+        hook(lines, site, syms['qh_menu_build'], 'terminal menu built (open, or rebuilt after Teleport)')
     # ---- Widescreen: 16:9 camera (the camera aspect constant) with the 2D interface kept at 4:3 proportions ----
     lines += ['', '[%s]' % PATCH_WS, 'author=Instant Karma v%s' % VERSION,
               'description=16:9 widescreen: wider 3D view; menus and text keep their shape.',

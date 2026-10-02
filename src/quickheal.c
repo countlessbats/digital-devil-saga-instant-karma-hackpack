@@ -8,10 +8,10 @@
  * facility(900), the party is healed and paid for and the script carries on after the facility call, so the
  * screen never fades and no menu opens. Every other fade runs the game's own command (0x10d908).
  *
- * Large Karma Terminals (and a recovery terminal whose script doesn't match) open the terminal itself: the game
- * mode's start (0x10a928) runs the facility prelude (0x2354d8) and opens the menu (0x249fa8, mode, arg): mode 0
- * Large, 1 Small, 2 recovery-only. The pnach sends 0x10a928 here; for modes 0 and 2 the party is healed and paid
- * for just before the menu opens, so its Recover option comes up greyed out. Nothing happens if nobody needs it.
+ * Large Karma Terminals (and a recovery terminal whose script doesn't match) open the terminal menu, which is
+ * built by 0x249498 (type at work+0x7c: 0 Large, 1 Small, 2 recovery-only) when it opens and again when it is
+ * rebuilt, as after a Teleport to a Large Terminal. Just before each build of a Large or recovery menu the party
+ * is healed and paid for, so its Restore option comes up greyed out. Nothing happens if nobody needs it.
  *
  * Script code is an array of words: low half opcode (0x1d push, 0x08 call command), high half operand. The
  * interpreter (0x10c7f8) keeps its context at 0x3bd78c: +0x18 instruction index, +0xbc code.
@@ -30,8 +30,7 @@
 #define f_heal        ((void (*)(u32))0x0024a2b8)
 #define f_money_add   ((void (*)(int))0x001198b8)
 #define f_se          ((void (*)(u32, int, int))0x002e8f78)
-#define f_prelude     ((void (*)(void))0x002354d8)
-#define f_term_open   ((void (*)(u32, u32))0x00249fa8)
+#define f_menu_build  ((void (*)(u32))0x00249498)    /* terminal menu (options, Restore list) */
 #define TERM_LARGE    0
 #define TERM_RECOVERY 2
 #define f_script_arg  ((int (*)(int))0x0010d428)
@@ -92,11 +91,11 @@ int qh_fade(void)
     return f_fade();
 }
 
-/* Replaces the terminal mode's start (0x10a928); args is {mode, arg}, or 0 for a Large Terminal. */
-void qh_term_open(u32 a0, u32 args)
+/* Called instead of the terminal's menu builder (0x249498, work in a0; work+0x7c is the terminal type) at its
+ * three calls: opening a terminal and rebuilding the menu, as on arriving by Teleport. */
+void qh_menu_build(u32 work)
 {
-    u32 mode = args ? RD32(args) : TERM_LARGE, arg = args ? RD32(args + 4) : 1;
-    if (FEATURES[13] && (mode == TERM_LARGE || mode == TERM_RECOVERY)) heal_party(1);
-    f_prelude();
-    f_term_open(mode, arg);
+    u32 type = RD32(work + 0x7c);
+    if (FEATURES[13] && (type == TERM_LARGE || type == TERM_RECOVERY)) heal_party(1);
+    f_menu_build(work);
 }
