@@ -1,5 +1,6 @@
 /* QuickStart: one press during the logos/intro movie skips all of it and lands on the main menu.
- * START (instead of any other button) also picks Load and loads the most recent save.
+ * START (instead of any other button) goes straight to the Load screen, as the main menu's Load does,
+ * without the title or the menu, and loads the most recent save.
  *
  * titleProc (0x26b1f0, work at gp-0x4720) runs the boot sequence as states: 5..0xc logos, 0xd..0x15 the
  * intro movie, 0x16..0x18 title set-up, 0x19 "press start", 0x1e the main menu, 0x1f leaving the menu
@@ -22,6 +23,7 @@
 #define f_blink_end  ((void (*)(void))0x0026d270)   /* "press start" clean-up */
 #define f_menu_open  ((void (*)(void))0x0026d648)
 #define f_se         ((void (*)(u32, int, int))0x002e8f78)
+#define f_set_mode   ((void (*)(int, int, int, int))0x001028e8)   /* game mode request (3 = Load screen) */
 
 static int skipping;     /* 1: jumped past the intro, heading for the menu */
 int qs_autoload;         /* 1: START was the skip press: choose Load at the menu (and the latest save) */
@@ -167,11 +169,19 @@ u32 qs_title(u32 task)
         u32 st = ST(w);
         if (st >= 5 && st <= 0x15 && !skipping && f_any_press()) {
             qs_autoload = (QS_PAD_START & 0x80) != 0;
-            if (qs_autoload) autoload_start();
             f_movie_stop();
-            f_fade_in(0, 0, 0, 0x14);
-            ST(w) = 0x16; CNT(w) = 0;
-            skipping = 1;
+            if (qs_autoload) {
+                /* straight to the Load screen, as the main menu's Load does (state 0x1f): no title, no menu */
+                autoload_start();
+                qs_autoload = 0;
+                RD32(w + 0x18) = 1;
+                f_set_mode(3, 0, 0, 0);
+                ST(w) = 0x2b; CNT(w) = 0;
+            } else {
+                f_fade_in(0, 0, 0, 0x14);
+                ST(w) = 0x16; CNT(w) = 0;
+                skipping = 1;
+            }
         } else if (st == 0x19 && skipping) {
             /* do what a press does on "press start": open the main menu */
             f_se(8, 0x7f, 0x3f);

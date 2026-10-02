@@ -307,8 +307,8 @@ def build(include_test=False, include_local=False):
     hook(lines, 0x001A44C4, syms['tfo_drop'], 'item drop roll')
     # ---- QuickStart: one press skips all logos/intro to the main menu; START loads the most recent save ----
     lines += ['', '[%s]' % PATCH_QS, 'author=Instant Karma v%s' % VERSION,
-              'description=Any button during the logos/intro skips straight to the main menu. START instead loads '
-              'your most recent save.']
+              'description=Any button during the logos/intro skips straight to the main menu. START instead goes straight to '
+              'your most recent save, with no title screen or menus.']
     blob(lines)
     lines.append('patch=1,EE,000FD214,word,00000001')            # FEATURES[5]: QuickStart on
     qa = syms['qs_title']; qhi = (qa + 0x8000) >> 16
