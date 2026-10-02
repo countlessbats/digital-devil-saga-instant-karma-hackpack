@@ -102,6 +102,11 @@ mt_out:
 SP_CODE = 0x000F0600
 SP_ASM = """
     .set noreorder
+    slti  $1, $4, MINX            # only sprites starting right of MINX (SPRITE_MINX, default 0)
+    bne   $1, $zero, sp_out
+    lui   $1, 0x0010                # ...and only calls from the game itself (not the mod's code)
+    sltu  $1, $31, $1
+    bne   $1, $zero, sp_out
     lui   $24, 0x000F
     lw    $25, 0x4ffc($24)
     sltiu $1, $25, 0x1000
@@ -110,7 +115,7 @@ SP_ASM = """
     sw    $31, 0x5000($1)
     sw    $4, 0x5004($1)
     sw    $5, 0x5008($1)
-    sw    $7, 0x500c($1)
+    sw    $6, 0x500c($1)           # a2 (x offset for the alpha sprite)
     addiu $25, $25, 16
     sw    $25, 0x4ffc($24)
 sp_out:
@@ -169,7 +174,7 @@ if __name__ == '__main__':
         lines.append('patch=1,EE,001028E8,word,%08X' % (0x08000000 | (MT_CODE >> 2)))
         lines.append('patch=1,EE,001028EC,word,00000000')
     if os.environ.get('SPRITE_TRACE'):    # log (ra, x, y, sheet) of 0x2bf790 sprite calls; reset 0xF4FFC to 0 to start
-        src = SP_ASM
+        src = SP_ASM.replace('MINX', str(int(os.environ.get('SPRITE_MINX', '-32768'))))
         if os.environ.get('SPRITE_TRACE') == 'alpha':
             src = src.replace('-0x40', '-0x80').replace('0x2bf798', '0x2bf4e8').replace('sd    $21, 0x28($sp)', 'sd    $22, 0x60($sp)')
         sw = build.asm(src, SP_CODE)

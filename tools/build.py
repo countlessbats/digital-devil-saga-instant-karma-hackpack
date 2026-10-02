@@ -376,7 +376,8 @@ def build(include_test=False, include_local=False):
     lines.append('patch=1,EE,002EFD38,word,%08X' % (0x24420000 | lo(b)))   # addiu v0, v0, lo(ws_ins_b)
     hook(lines, 0x001BFF7C, syms['ws_project'], 'reticle projection (spread to match the squeezed interface)')
     hook(lines, 0x00149F84, syms['ws_minimap'], 'field minimap draw (squeezed without the edge rule)')
-    hook(lines, 0x00284574, syms['ws_label'], 'menu HP/MP labels at the right edge (squeezed whole)')
+    for site in (0x00248B00, 0x00248B28, 0x00275D60, 0x00275D8C, 0x002822C4, 0x00282324, 0x002827D0, 0x00282814):
+        hook(lines, site, syms['ws_status_line'], 'party status line (squeezed whole, no edge rule)')
     # ---- extra sections kept outside the repository (local/sections.py), if present ----
     if include_local:
         import importlib.util

@@ -25,7 +25,7 @@
 #define X_MID     0x8000
 
 int ws_world;                     /* nonzero: 2D placed at a projected 3D point, leave it alone */
-static int ws_noedge;             /* nonzero: squeeze even vertices on a screen edge (see ws_label) */
+static int ws_noedge;             /* nonzero: squeeze even vertices on a screen edge (see ws_status_line) */
 static int ws_off;                /* switched to 4:3 by WideToggle */
 
 int ws_active(void) { return FEATURES[11] && !ws_off; }
@@ -159,12 +159,14 @@ void ws_minimap(u32 a0, u32 a1, u32 a2, u32 a3, u32 a4, u32 a5, u32 a6, u32 a7)
     ws_world = 0;
 }
 
-/* The menu's big HP/MP labels beside each party member (sprite call at 0x284574) end exactly at the right edge;
- * under the edge rule their right side would stay there and stretch them, so they are squeezed whole. */
-#define f_sprite_a ((void (*)(u32, u32, u32, u32, u32, u32, u32, u32))0x002bf4e0)
-void ws_label(u32 a0, u32 a1, u32 a2, u32 a3, u32 a4, u32 a5, u32 a6, u32 a7)
+/* A party member's status line (0x2845f8: HP/MP bars, numbers and labels) is squeezed whole. Its labels end
+ * at the right edge in the menu, and on the Mantra and status screens the line slides in from beyond it; under
+ * the edge rule any piece passing through the edge band would stay pinned there and stretch. The pnach points
+ * the line's eight calls here. */
+#define f_status_line ((void (*)(u32, u32, u32, u32, u32, u32, u32, u32))0x002845f8)
+void ws_status_line(u32 a0, u32 a1, u32 a2, u32 a3, u32 a4, u32 a5, u32 a6, u32 a7)
 {
-    ws_noedge = 1;
-    f_sprite_a(a0, a1, a2, a3, a4, a5, a6, a7);
-    ws_noedge = 0;
+    ws_noedge++;
+    f_status_line(a0, a1, a2, a3, a4, a5, a6, a7);
+    ws_noedge--;
 }
