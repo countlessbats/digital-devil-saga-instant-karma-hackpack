@@ -282,6 +282,7 @@ function Install-InstantKarma([string]$root, [string[]]$names) {
         Move-Item -LiteralPath $legacy -Destination (Join-Path $backup "${Serial}_${Crc}.pnach.old") -Force
     }
     Write-TextAtomic (Join-Path $patches $PnachName) ([IO.File]::ReadAllText((Join-Path $Here $PnachName)))
+    if (($names -contains "${Prefix}SceneSkip") -and -not ($names -contains "${Prefix}Native Turbo")) { $names = @($names) + "${Prefix}Native Turbo" }   # SceneSkip needs it
     $enable = if ($names.Count) { @($CoreName) + $names } else { @() }
     Set-EnableLines (Join-Path $gs $IniName) $enable $backup
     Set-TurboCycleRate $root ($names -contains "${Prefix}Native Turbo")
@@ -428,8 +429,8 @@ function Update-Ui {
     $removeBtn.Enabled = $rootOk -and (Test-Installed $root)
     $any = @($checks.Values | Where-Object { $_.Checked }).Count -gt 0
     $installBtn.Enabled = $rootOk -and $state.RomChecked -and ($state.RomOk -ne $false) -and $any
-    $skip = $checks["${Prefix}SceneSkip"]; $turbo = $checks["${Prefix}Native Turbo"]
-    $note.Text = if ($skip -and $turbo -and $skip.Checked -and -not $turbo.Checked) { "SceneSkip's fast-forward uses Native Turbo; without it, START still skips each scene's skippable parts." } else { '' }
+    $skip = $checks["${Prefix}SceneSkip"]
+    $note.Text = if ($skip -and $skip.Checked) { "SceneSkip runs on Native Turbo, so Native Turbo stays on with it." } else { '' }
 }
 
 function Set-Root([string]$root) {
@@ -466,6 +467,12 @@ $rootBrowse.Add_Click({
 $rootBox.Add_TextChanged({ Update-Ui })
 $rootBox.Add_SelectedIndexChanged({ Set-Root $rootBox.SelectedItem })
 foreach ($cb in $checks.Values) { $cb.Add_CheckedChanged({ Update-Ui }) }
+# SceneSkip needs Native Turbo: ticking SceneSkip ticks Turbo, unticking Turbo unticks SceneSkip
+$skipCb = $checks["${Prefix}SceneSkip"]; $turboCb = $checks["${Prefix}Native Turbo"]
+if ($skipCb -and $turboCb) {
+    $skipCb.Add_CheckedChanged({ if ($skipCb.Checked -and -not $turboCb.Checked) { $turboCb.Checked = $true } })
+    $turboCb.Add_CheckedChanged({ if (-not $turboCb.Checked -and $skipCb.Checked) { $skipCb.Checked = $false } })
+}
 $allBtn.Add_Click({ foreach ($cb in $checks.Values) { $cb.Checked = $true } })
 $noneBtn.Add_Click({ foreach ($cb in $checks.Values) { $cb.Checked = $false } })
 

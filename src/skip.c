@@ -10,7 +10,7 @@
  * game accepts it, and the script steps in between run fast-forwarded (turbo's override, 8 logic passes
  * per frame, when the Native Turbo section is on). A pre-rendered movie (player task gp-0x46c4) can't be
  * sped up and would fall behind the frame-timed subtitles, so it is stopped (0x270030, as the game's own
- * movie skip does); the event carries on without it, behind a black screen at 64 passes per frame (the
+ * movie skip does); the event carries on without it at 64 passes per frame, subtitles still showing (the
  * script itself can run for minutes; without the Native Turbo section the movie is left alone). A choice
  * ends the skip: the decision is made at normal
  * speed and START starts skipping again from there. Every choice is opened by 0x19beb0 (field scripts'
@@ -102,7 +102,7 @@ void skip_frame(void)
     if (field_control_frame + 2 >= FRAME && field_control_frame) { stop(); return; }
     if (find_task(0, 0)) idle = 0;
     else if (++idle > 30) { stop(); return; }
-    if (MOVIE_TASK && RD32(TURBO_CODE)) { f_movie_stop(); movie_cut = 1; hold_black |= 1; }   /* movie: cut it */
+    if (MOVIE_TASK && RD32(TURBO_CODE)) { f_movie_stop(); movie_cut = 1; }   /* movie: cut it */
     if (RD32(TURBO_CODE)) TURBO_OVR = movie_cut ? 64 : 8;
     if (find_task(0, 0)) { skip_timer++; press_start(); }            /* segment playing: ask it to skip */
 }

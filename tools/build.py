@@ -319,7 +319,7 @@ def build(include_test=False, include_local=False):
     # ---- SceneSkip: START skips the whole cutscene (every segment made skippable; the rest fast-forwarded) ----
     lines += ['', '[%s]' % PATCH_SKIP, 'author=Instant Karma v%s' % VERSION,
               'description=START during a cutscene skips the whole scene, including scenes the game normally '
-              'refuses to skip (fast-forwards the parts in between and cuts pre-rendered movies with Native Turbo on). Stops at choices; START again carries on.']
+              'refuses to skip: fast-forwards the parts in between and cuts pre-rendered movies (subtitles still race by). Needs Native Turbo. Stops at choices; START again carries on.']
     blob(lines)
     lines.append('patch=1,EE,000FD218,word,00000001')            # FEATURES[6]: SceneSkip on
     lines.append('patch=1,EE,0022F2F4,word,24020000')            # 'cannot be skipped' check -> skippable

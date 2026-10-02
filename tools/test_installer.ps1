@@ -56,10 +56,13 @@ Check 'Native Turbo sets EE Cycle Rate 300%' ((Read-IniValue $ini 'EmuCore/Speed
 Check 'EECycleRate appears once' (([regex]::Matches([IO.File]::ReadAllText($ini), 'EECycleRate')).Count -eq 1)
 Check 'no BOM in ini' ([IO.File]::ReadAllBytes($ini)[0] -ne 0xEF)
 
-$pick2 = @('Instant Karma - SceneSkip', 'Instant Karma - QuickStart')
+$pick2 = @('Instant Karma - OpenChests', 'Instant Karma - QuickStart')
 Install-InstantKarma $root $pick2
 Check 'Turbo off restores EE Cycle Rate' ((Read-IniValue $ini 'EmuCore/Speedhacks' 'EECycleRate') -eq '1')
 Check 're-install switches modules' (((Get-EnabledModules $root) -join '|') -eq ($pick2 -join '|'))
+Install-InstantKarma $root @('Instant Karma - SceneSkip')
+Check 'SceneSkip brings Native Turbo' ((Get-EnabledModules $root) -contains 'Instant Karma - Native Turbo')
+Install-InstantKarma $root $pick2
 Check 'backup keeps the first original' ([IO.File]::ReadAllText((Join-Path $root 'instantkarma\backup\SLUS-20974_D7273511.ini.original')) -eq $orig)
 
 # fresh root without a game settings file, patches folder redirected
