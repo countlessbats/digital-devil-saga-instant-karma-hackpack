@@ -319,12 +319,14 @@ def build(include_test=False, include_local=False):
     # ---- SceneSkip: START skips the whole cutscene (every segment made skippable; the rest fast-forwarded) ----
     lines += ['', '[%s]' % PATCH_SKIP, 'author=Instant Karma v%s' % VERSION,
               'description=START during a cutscene skips the whole scene, including scenes the game normally '
-              'refuses to skip (fast-forwards the parts in between with Native Turbo on).']
+              'refuses to skip (fast-forwards the parts in between with Native Turbo on). Stops at choices; START again carries on.']
     blob(lines)
     lines.append('patch=1,EE,000FD218,word,00000001')            # FEATURES[6]: SceneSkip on
     lines.append('patch=1,EE,0022F2F4,word,24020000')            # 'cannot be skipped' check -> skippable
     hook(lines, 0x001006A4, syms['qs_pad'], 'main loop pad processing (shared with QuickStart)')
     hook(lines, 0x00125980, syms['field_hook'], 'field player-control step (tells SceneSkip the player has control)')
+    for site in (0x0019B164, 0x0019B284, 0x0022D298, 0x0024DD28):
+        hook(lines, site, syms['skip_choice'], 'a choice opens (0x19beb0): the skip stops there')
     # ---- OpenChests: inspecting a chest opens it at once (question and Yes answered automatically) ----
     lines += ['', '[%s]' % PATCH_CHEST, 'author=Instant Karma v%s' % VERSION,
               'description=Inspecting a chest opens it straight away: the "Touch it?" question and Yes/No are answered inside the script, never shown. '

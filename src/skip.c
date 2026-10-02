@@ -8,7 +8,9 @@
  * After one START, until the player has control again (or ~1 s passes with no segment playing, e.g. a battle
  * starts), including scenes chained straight after it: each new segment gets START pressed as soon as the
  * game accepts it, and the script steps in between run fast-forwarded (turbo's override, 8 logic passes
- * per frame, when the Native Turbo section is on). */
+ * per frame, when the Native Turbo section is on). A choice ends the skip: the decision is made at normal
+ * speed and START starts skipping again from there. Every choice is opened by 0x19beb0 (field scripts'
+ * SELECT commands and the event player alike); the section points its four calls at skip_choice. */
 #include "game.h"
 
 #define GP           0x003c0cf0u
@@ -31,6 +33,13 @@ static void stop(void)
     if (RD32(TURBO_CODE)) TURBO_OVR = 0;
 }
 
+
+#define f_choice_start ((void (*)(int))0x0019beb0)
+void skip_choice(int win)
+{
+    if (FEATURES[6] && skip_task) stop();
+    f_choice_start(win);
+}
 
 static int is_event_task(u32 t)
 {

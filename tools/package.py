@@ -34,7 +34,7 @@ MODULES = [
                       'fewer encounters, you get equal-proportionately more rewards. Affects experience, atma, macca '
                       'and item drop rates--drop rates over 100% give a chance for extra items. No effect on bosses.'),
     (build.PATCH_QS, 'During bootup, pressing START will quickly speed through to load your latest save.'),
-    (build.PATCH_SKIP, 'Press START to hyper-turbo through cutscenes.'),
+    (build.PATCH_SKIP, 'Press START to hyper-turbo through cutscenes. Stops at choices; press START again to carry on.'),
     (build.PATCH_CHEST, 'No more confirmation on opening chests.'),
     (build.PATCH_WT, 'Dialogue appears instantly.'),
     (build.PATCH_QH, 'Inspecting a recovery terminal heals the whole party instantly, no menu. Karma Terminals '
