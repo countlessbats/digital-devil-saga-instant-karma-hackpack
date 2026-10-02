@@ -19,7 +19,8 @@ VERSION = open(os.path.join(ROOT, 'VERSION')).read().strip()
 # build into the buffer the render thread is not holding.
 # Turbo is off (and L3/R3 toggles ignored) while the camp menu is open.
 TURBO_VARS = 0x000F0000   # +0 toggle mult, +1 debug override, +2 prev held, +4 last N, +8 extra passes,
-                          # +0x14 buttons as pressed (u16, saved by the pad filter)
+                          # +0x14 buttons as pressed (u16, saved by the pad filter),
+                          # +0x16 auto speed, +0x17 frames it stays on (set by slow transitions, see AUTO_ASM)
 TURBO_CODE = 0x000F0020
 HOOK_SITE = 0x001006AC    # jal 0x101540 inside main loop
 
@@ -44,6 +45,28 @@ PAD_FILTER_ASM = """
 keep:
     j     0x2e39c8
     nop
+"""
+
+# Auto speed: a few slow screen transitions run at 6x by themselves. Mantra Data (terminal) cross-fades into
+# Mantra Status and back over 10 frames each (screen state work+0x540: 4 out, 9 back; draw 0x251e38, work in a1).
+# The draw's first two instructions jump here; while a fade runs it asks turbo for 6x for the next frame.
+AUTO_CODE = 0x000F02C0
+AUTO_ASM = """
+    .set noreorder
+    lw    $15, 0x540($5)
+    addiu $24, $zero, 4
+    beq   $15, $24, auto_on
+    addiu $24, $zero, 9
+    bne   $15, $24, auto_out
+    nop
+auto_on:
+    lui   $24, 0x000F
+    addiu $15, $zero, 0x0106      # +0x16 = 6x, +0x17 = 1 frame (it is re-armed every pass)
+    sh    $15, 0x16($24)
+auto_out:
+    addiu $sp, $sp, -0x40
+    j     0x251e40
+    addiu $4, $zero, 0x53
 """
 
 TURBO_ASM = """
@@ -98,6 +121,17 @@ no_r2:
     nop
     or    $s0, $12, $zero
 no_ovr:
+    lbu   $12, 0x17($s1)          # auto speed for a slow transition (AUTO_ASM): frames left
+    blez  $12, no_auto
+    nop
+    addiu $12, $12, -1
+    sb    $12, 0x17($s1)
+    lbu   $13, 0x16($s1)
+    slt   $12, $s0, $13
+    beq   $12, $zero, no_auto     # take the higher of the two
+    nop
+    or    $s0, $13, $zero
+no_auto:
     bgtz  $s0, n_ok
     nop
 in_menu:
@@ -183,7 +217,7 @@ def build(include_test=False, include_local=False):
              '[%s]' % PATCH_TURBO,
              'author=Instant Karma v%s' % VERSION,
              'description=Hold R2 = 3x, hold L2 = 6x, R3/L3 toggle 3x/6x. Off in the main menu. '
-             'Music stays normal speed. 6x needs EE Cycle Rate 300%.']
+             'Music stays normal speed. 6x needs EE Cycle Rate 300%. The Mantra Data cross-fades always run at 6x.']
     words = asm(TURBO_ASM, TURBO_CODE)
     for i, w in enumerate(words):
         lines.append('patch=1,EE,%08X,word,%08X' % (TURBO_CODE + 4 * i, w))
@@ -191,6 +225,10 @@ def build(include_test=False, include_local=False):
     for i, w in enumerate(asm(PAD_FILTER_ASM, PAD_FILTER)):
         lines.append('patch=1,EE,%08X,word,%08X' % (PAD_FILTER + 4 * i, w))
     lines.append('patch=1,EE,%08X,word,%08X' % (PAD_SITE, jal(PAD_FILTER)))
+    for i, w in enumerate(asm(AUTO_ASM, AUTO_CODE)):
+        lines.append('patch=1,EE,%08X,word,%08X' % (AUTO_CODE + 4 * i, w))
+    lines.append('patch=1,EE,00251E38,word,%08X' % (0x08000000 | (AUTO_CODE >> 2)))   # Mantra Data draw
+    lines.append('patch=1,EE,00251E3C,word,00000000')
     # ---- C mods (src/*.c): the code blob lives once, in the Core section every other section relies on.
     # (PCSX2 re-applies every enabled line each frame, so one copy per section multiplied that work.)
     segs, syms = cbuild.build(include_test, include_local)

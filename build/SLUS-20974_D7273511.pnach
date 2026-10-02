@@ -1,8 +1,8 @@
 gametitle=Shin Megami Tensei: Digital Devil Saga (USA) [SLUS-20974] (D7273511)
 
 [Instant Karma - Native Turbo]
-author=Instant Karma v0.7.32
-description=Hold R2 = 3x, hold L2 = 6x, R3/L3 toggle 3x/6x. Off in the main menu. Music stays normal speed. 6x needs EE Cycle Rate 300%.
+author=Instant Karma v0.7.33
+description=Hold R2 = 3x, hold L2 = 6x, R3/L3 toggle 3x/6x. Off in the main menu. Music stays normal speed. 6x needs EE Cycle Rate 300%. The Mantra Data cross-fades always run at 6x.
 patch=1,EE,000F0020,word,27BDFFE0
 patch=1,EE,000F0024,word,FFBF0000
 patch=1,EE,000F0028,word,FFB00008
@@ -13,7 +13,7 @@ patch=1,EE,000F0038,word,96290002
 patch=1,EE,000F003C,word,A6280002
 patch=1,EE,000F0040,word,3C0C003C
 patch=1,EE,000F0044,word,918CC6B4
-patch=1,EE,000F0048,word,15800022
+patch=1,EE,000F0048,word,1580002C
 patch=1,EE,000F004C,word,00000000
 patch=1,EE,000F0050,word,01095026
 patch=1,EE,000F0054,word,01485024
@@ -46,51 +46,61 @@ patch=1,EE,000F00BC,word,922C0001
 patch=1,EE,000F00C0,word,11800002
 patch=1,EE,000F00C4,word,00000000
 patch=1,EE,000F00C8,word,01808025
-patch=1,EE,000F00CC,word,1E000002
-patch=1,EE,000F00D0,word,00000000
-patch=1,EE,000F00D4,word,24100001
-patch=1,EE,000F00D8,word,A2300004
-patch=1,EE,000F00DC,word,2610FFFF
-patch=1,EE,000F00E0,word,1A00001A
-patch=1,EE,000F00E4,word,00000000
-patch=1,EE,000F00E8,word,3C08003C
-patch=1,EE,000F00EC,word,8D09A904
-patch=1,EE,000F00F0,word,3C0A0200
-patch=1,EE,000F00F4,word,012A4825
-patch=1,EE,000F00F8,word,AD09A904
-patch=1,EE,000F00FC,word,0C040550
-patch=1,EE,000F0100,word,00000000
-patch=1,EE,000F0104,word,3C08003C
-patch=1,EE,000F0108,word,9109D2EA
-patch=1,EE,000F010C,word,39290001
-patch=1,EE,000F0110,word,A109D2EA
-patch=1,EE,000F0114,word,0C03C0A0
-patch=1,EE,000F0118,word,00000000
-patch=1,EE,000F011C,word,3C08003C
-patch=1,EE,000F0120,word,8D09A700
-patch=1,EE,000F0124,word,25290001
-patch=1,EE,000F0128,word,AD09A700
-patch=1,EE,000F012C,word,8D09A704
-patch=1,EE,000F0130,word,25290001
-patch=1,EE,000F0134,word,AD09A704
-patch=1,EE,000F0138,word,8E290008
-patch=1,EE,000F013C,word,25290001
-patch=1,EE,000F0140,word,AE290008
-patch=1,EE,000F0144,word,1000FFE6
-patch=1,EE,000F0148,word,2610FFFF
-patch=1,EE,000F014C,word,3C08003C
-patch=1,EE,000F0150,word,8D09A904
-patch=1,EE,000F0154,word,3C0AFDFF
-patch=1,EE,000F0158,word,354AFFFF
-patch=1,EE,000F015C,word,012A4824
-patch=1,EE,000F0160,word,AD09A904
-patch=1,EE,000F0164,word,0C040550
-patch=1,EE,000F0168,word,00000000
-patch=1,EE,000F016C,word,DFBF0000
-patch=1,EE,000F0170,word,DFB00008
-patch=1,EE,000F0174,word,DFB10010
-patch=1,EE,000F0178,word,03E00008
-patch=1,EE,000F017C,word,27BD0020
+patch=1,EE,000F00CC,word,922C0017
+patch=1,EE,000F00D0,word,19800008
+patch=1,EE,000F00D4,word,00000000
+patch=1,EE,000F00D8,word,258CFFFF
+patch=1,EE,000F00DC,word,A22C0017
+patch=1,EE,000F00E0,word,922D0016
+patch=1,EE,000F00E4,word,020D602A
+patch=1,EE,000F00E8,word,11800002
+patch=1,EE,000F00EC,word,00000000
+patch=1,EE,000F00F0,word,01A08025
+patch=1,EE,000F00F4,word,1E000002
+patch=1,EE,000F00F8,word,00000000
+patch=1,EE,000F00FC,word,24100001
+patch=1,EE,000F0100,word,A2300004
+patch=1,EE,000F0104,word,2610FFFF
+patch=1,EE,000F0108,word,1A00001A
+patch=1,EE,000F010C,word,00000000
+patch=1,EE,000F0110,word,3C08003C
+patch=1,EE,000F0114,word,8D09A904
+patch=1,EE,000F0118,word,3C0A0200
+patch=1,EE,000F011C,word,012A4825
+patch=1,EE,000F0120,word,AD09A904
+patch=1,EE,000F0124,word,0C040550
+patch=1,EE,000F0128,word,00000000
+patch=1,EE,000F012C,word,3C08003C
+patch=1,EE,000F0130,word,9109D2EA
+patch=1,EE,000F0134,word,39290001
+patch=1,EE,000F0138,word,A109D2EA
+patch=1,EE,000F013C,word,0C03C0A0
+patch=1,EE,000F0140,word,00000000
+patch=1,EE,000F0144,word,3C08003C
+patch=1,EE,000F0148,word,8D09A700
+patch=1,EE,000F014C,word,25290001
+patch=1,EE,000F0150,word,AD09A700
+patch=1,EE,000F0154,word,8D09A704
+patch=1,EE,000F0158,word,25290001
+patch=1,EE,000F015C,word,AD09A704
+patch=1,EE,000F0160,word,8E290008
+patch=1,EE,000F0164,word,25290001
+patch=1,EE,000F0168,word,AE290008
+patch=1,EE,000F016C,word,1000FFE6
+patch=1,EE,000F0170,word,2610FFFF
+patch=1,EE,000F0174,word,3C08003C
+patch=1,EE,000F0178,word,8D09A904
+patch=1,EE,000F017C,word,3C0AFDFF
+patch=1,EE,000F0180,word,354AFFFF
+patch=1,EE,000F0184,word,012A4824
+patch=1,EE,000F0188,word,AD09A904
+patch=1,EE,000F018C,word,0C040550
+patch=1,EE,000F0190,word,00000000
+patch=1,EE,000F0194,word,DFBF0000
+patch=1,EE,000F0198,word,DFB00008
+patch=1,EE,000F019C,word,DFB10010
+patch=1,EE,000F01A0,word,03E00008
+patch=1,EE,000F01A4,word,27BD0020
 patch=1,EE,001006AC,word,0C03C008
 patch=1,EE,000F0280,word,3C0A0040
 patch=1,EE,000F0284,word,954B9B06
@@ -105,9 +115,23 @@ patch=1,EE,000F02A4,word,A54B9B06
 patch=1,EE,000F02A8,word,080B8E72
 patch=1,EE,000F02AC,word,00000000
 patch=1,EE,00100674,word,0C03C0A0
+patch=1,EE,000F02C0,word,8CAF0540
+patch=1,EE,000F02C4,word,24180004
+patch=1,EE,000F02C8,word,11F80003
+patch=1,EE,000F02CC,word,24180009
+patch=1,EE,000F02D0,word,15F80004
+patch=1,EE,000F02D4,word,00000000
+patch=1,EE,000F02D8,word,3C18000F
+patch=1,EE,000F02DC,word,240F0106
+patch=1,EE,000F02E0,word,A70F0016
+patch=1,EE,000F02E4,word,27BDFFC0
+patch=1,EE,000F02E8,word,08094790
+patch=1,EE,000F02EC,word,24040053
+patch=1,EE,00251E38,word,0803C0B0
+patch=1,EE,00251E3C,word,00000000
 
 [Instant Karma - Core]
-author=Instant Karma v0.7.32
+author=Instant Karma v0.7.33
 description=The engine that makes the other Instant Karma features go. Always on while any of them is on; keep it ticked in the PCSX2 Patches list.
 patch=1,EE,000C0000,word,27BDFFB0
 patch=1,EE,000C0004,word,FFBF0048
@@ -9862,7 +9886,7 @@ patch=1,EE,00249FA8,word,27BDFFF0
 patch=1,EE,00249FAC,word,FFB00000
 
 [Instant Karma - SET Screen]
-author=Instant Karma v0.7.32
+author=Instant Karma v0.7.33
 description=Skill SET screen: 3-column LEARNED grid (d-pad wraps, L2/R2 change tab), START sorts Game/Cost/A-Z, relaid-out panels.
 patch=1,EE,0027862C,word,0C031E98
 patch=1,EE,0037CC9C,word,000C7EB8
@@ -9873,7 +9897,7 @@ patch=1,EE,0027DBD0,word,08031316
 patch=1,EE,0027DBD4,word,00000000
 
 [Instant Karma - Prey Eyes]
-author=Instant Karma v0.7.32
+author=Instant Karma v0.7.33
 description=Battle info: reticle shows the skill result on each target (green good, red bad, ? unknown), affinity board for the targeted enemy, buff/debuff icons. Affinities are learned by using them.
 patch=1,EE,000A0000,word,00000000
 patch=1,EE,000A0004,word,00000000
@@ -26541,26 +26565,26 @@ patch=1,EE,000FD200,word,00000001
 patch=1,EE,001C13A0,word,0C0300FA
 
 [Instant Karma - BattleButtons]
-author=Instant Karma v0.7.32
+author=Instant Karma v0.7.33
 description=Battle command menu: R1 passes and L1 retreats instantly; the right stick jumps a page.
 patch=1,EE,000FD204,word,00000001
 patch=1,EE,001BF134,word,0C030000
 patch=1,EE,001C13A0,word,0C0300FA
 
 [Instant Karma - SubtleKarma]
-author=Instant Karma v0.7.32
+author=Instant Karma v0.7.33
 description=Field: d-pad UP toggles random encounters on/off (with sound and message).
 patch=1,EE,000FD208,word,00000001
 patch=1,EE,00125980,word,0C0301EC
 
 [Instant Karma - SunKing]
-author=Instant Karma v0.7.32
+author=Instant Karma v0.7.33
 description=Field: d-pad DOWN switches solar noise between MAX and MIN.
 patch=1,EE,000FD20C,word,00000001
 patch=1,EE,00125980,word,0C0301EC
 
 [Instant Karma - TwoForOne]
-author=Instant Karma v0.7.32
+author=Instant Karma v0.7.33
 description=SELECT on the field cycles 1-for-1 to 5-for-1: N times fewer random encounters, N times the EXP, atma, macca and item drop chance (bosses unchanged).
 patch=1,EE,000FD210,word,00000001
 patch=1,EE,00125980,word,0C0301EC
@@ -26575,7 +26599,7 @@ patch=1,EE,001D2564,word,0C032258
 patch=1,EE,001A44C4,word,0C03228C
 
 [Instant Karma - QuickStart]
-author=Instant Karma v0.7.32
+author=Instant Karma v0.7.33
 description=Any button during the logos/intro skips straight to the main menu. START instead loads your most recent save.
 patch=1,EE,000FD214,word,00000001
 patch=1,EE,0026B11C,word,3C08000C
@@ -26584,7 +26608,7 @@ patch=1,EE,001006A4,word,0C030ED0
 patch=1,EE,00125980,word,0C0301EC
 
 [Instant Karma - SceneSkip]
-author=Instant Karma v0.7.32
+author=Instant Karma v0.7.33
 description=START during a cutscene skips the whole scene, including scenes the game normally refuses to skip (fast-forwards the parts in between with Native Turbo on).
 patch=1,EE,000FD218,word,00000001
 patch=1,EE,0022F2F4,word,24020000
@@ -26592,7 +26616,7 @@ patch=1,EE,001006A4,word,0C030ED0
 patch=1,EE,00125980,word,0C0301EC
 
 [Instant Karma - OpenChests]
-author=Instant Karma v0.7.32
+author=Instant Karma v0.7.33
 description=Inspecting a chest opens it straight away: the "Touch it?" question and Yes/No are answered inside the script, never shown. The "Obtained" message stays so you see what you got.
 patch=1,EE,000FD21C,word,00000001
 patch=1,EE,0039E288,word,000C0470
@@ -26600,7 +26624,7 @@ patch=1,EE,0039E2A0,word,000C06D8
 patch=1,EE,0039E2F8,word,000C0668
 
 [Instant Karma - BadKarma]
-author=Instant Karma v0.7.32
+author=Instant Karma v0.7.33
 description=d-pad RIGHT on the field starts a fight right away (TwoForOne rewards apply).
 patch=1,EE,000FD224,word,00000001
 patch=1,EE,00125980,word,0C0301EC
@@ -26609,7 +26633,7 @@ patch=1,EE,00124D48,word,0C03213A
 patch=1,EE,00216228,word,0C03213A
 
 [Instant Karma - GoodKarma]
-author=Instant Karma v0.7.32
+author=Instant Karma v0.7.33
 description=d-pad LEFT on the field starts a rare Omoikane fight (TwoForOne rewards apply).
 patch=1,EE,000FD228,word,00000001
 patch=1,EE,00125980,word,0C0301EC
@@ -26618,13 +26642,13 @@ patch=1,EE,00124D48,word,0C03213A
 patch=1,EE,00216228,word,0C03213A
 
 [Instant Karma - WordTripper]
-author=Instant Karma v0.7.32
+author=Instant Karma v0.7.33
 description=Text appears all at once, fading in together instead of letter by letter.
 patch=1,EE,00195664,word,00000000
 patch=1,EE,0019566C,word,0000102D
 
 [Instant Karma - QuickHeal]
-author=Instant Karma v0.7.32
+author=Instant Karma v0.7.33
 description=Recovery terminals heal the party at once with no menu; Karma Terminals heal it as their menu opens. Same price as the menu.
 patch=1,EE,000FD234,word,00000001
 patch=1,EE,0039E308,word,000C45B0
@@ -26632,7 +26656,7 @@ patch=1,EE,0010A928,word,0803129A
 patch=1,EE,0010A92C,word,00000000
 
 [Instant Karma - Widescreen]
-author=Instant Karma v0.7.32
+author=Instant Karma v0.7.33
 description=16:9 widescreen: wider 3D view; menus and text keep their shape.
 gsaspectratio=16:9
 patch=1,EE,000FD22C,word,00000001

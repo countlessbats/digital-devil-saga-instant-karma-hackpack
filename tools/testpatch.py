@@ -16,6 +16,17 @@ INJ_ASM = """
     addiu $sp, $sp, -0x10
     sd    $ra, 0($sp)
     lui   $8, 0x000F
+    lw    $12, 0x1c($8)           # 0xF001C: frames until freeze (0 = none)
+    blez  $12, nofrz
+    addiu $12, $12, -1
+    sw    $12, 0x1c($8)
+    bne   $12, $zero, nofrz
+    addiu $12, $zero, 1
+    sw    $12, 0x18($8)           # 0xF0018: frozen while nonzero (clear it over PINE to resume)
+nofrz:
+    lw    $12, 0x18($8)
+    bne   $12, $zero, nofrz
+    nop
     lw    $12, 0x10($8)           # 0xF0010: raw analog override (0 = none)
     beq   $12, $zero, noan
     lui   $10, 0x0040
@@ -108,6 +119,29 @@ sp_out:
     sd    $21, 0x28($sp)
 """
 
+MT2_ASM = """
+    .set noreorder
+    lui   $24, 0x000F
+    lw    $25, 0x4ffc($24)
+    sltiu $1, $25, 0x1000
+    beq   $1, $zero, lbl
+    addu  $1, $24, $25
+    addiu $15, $zero, TAG
+    sw    $15, 0x5000($1)
+    lui   $15, 0x003C
+    lw    $15, -0x5900($15)
+    sw    $15, 0x5004($1)
+    lw    $15, 0x540($5)
+    sw    $15, 0x5008($1)
+    lw    $15, 0x544($5)
+    sw    $15, 0x500c($1)
+    addiu $25, $25, 16
+    sw    $25, 0x4ffc($24)
+lbl:
+    j     ORIG
+    nop
+"""
+
 if __name__ == '__main__':
     dest = sys.argv[1] if len(sys.argv) > 1 else r'<local path>'
     release_layout = bool(os.environ.get('RELEASE_LAYOUT'))   # exact release blob + pad injection only
@@ -142,5 +176,12 @@ if __name__ == '__main__':
         site = 0x2bf4e0 if os.environ.get('SPRITE_TRACE') == 'alpha' else 0x2bf790
         lines.append('patch=1,EE,%08X,word,%08X' % (site, 0x08000000 | (SP_CODE >> 2)))
         lines.append('patch=1,EE,%08X,word,00000000' % (site + 4))
+    if os.environ.get('MANTRA_TRACE'):    # log (tag, frame, work+0x540, work+0x544) from the Mantra screens' draw tasks
+        src = MT2_ASM.replace('TAG', '1').replace('lbl', 'l1').replace('j     ORIG', 'addiu $sp, $sp, -0x40')
+        src = src.replace('    nop' + chr(10) + '"', '')   # (kept simple: tail is rebuilt below)
+        src = src[:src.rindex('addiu $sp, $sp, -0x40')] + 'addiu $sp, $sp, -0x40' + chr(10) + '    j     0x251e40' + chr(10) + '    addiu $4, $zero, 0x53' + chr(10)
+        for i, w in enumerate(build.asm(src, 0xF0700)): lines.append('patch=1,EE,%08X,word,%08X' % (0xF0700 + 4 * i, w))
+        lines.append('patch=1,EE,00251E38,word,%08X' % (0x08000000 | (0xF0700 >> 2)))
+        lines.append('patch=1,EE,00251E3C,word,00000000')
     open(os.path.join(dest, build.PNACH), 'w').write('\n'.join(lines) + '\n')
     print('test pnach ->', dest)

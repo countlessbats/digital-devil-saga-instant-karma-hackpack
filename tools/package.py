@@ -22,7 +22,7 @@ MODULES = [
                        'as you browse skills. See buff and debuff stacks. '
                        "Inspired by SMTV's system."),
     (build.PATCH_TURBO, 'Speed up time without distorting audio. Hold R2/L2 for 3x/6x, click R3/L3 to toggle 3x/6x. '
-                        'Paused while the main menu is open.'),
+                        'Paused while the main menu is open. The Mantra Data cross-fades always play at 6x.'),
     (build.PATCH_SET, 'Increases the SET screen width to 3 columns and adds COST and ALPHABETICAL sort modes on START.'),
     (build.PATCH_BB, 'In combat, R1 quick-passes your turn, L1 quick-attempts to escape, and the right stick '
                      'skips a page up or down in the command lists.'),
