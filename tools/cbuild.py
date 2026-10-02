@@ -4,7 +4,10 @@ import os, subprocess, glob
 from elftools.elf.elffile import ELFFile
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-ZIG = r'<local path>'
+import sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import localpaths
+ZIG = localpaths.get('zig', required=False) or 'zig'     # zig 0.16 (local/paths.json "zig", or on PATH)
 CFLAGS = ['-target', 'mips64el-freestanding-gnuabin32', '-mcpu=mips3', '-O2', '-fno-pic',
           '-Xclang', '-target-feature', '-Xclang', '+noabicalls', '-G0', '-ffreestanding', '-fno-builtin', '-nostdlib',
           '-fno-stack-protector', '-fno-unwind-tables', '-fno-asynchronous-unwind-tables', '-Wall']

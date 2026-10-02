@@ -17,7 +17,7 @@ if ($Iso) {
     Check "ISO verifies ($($r.Text))" ($r.Ok -eq $true)
     $junk = Join-Path $env:TEMP 'gk-notaniso.iso'; [IO.File]::WriteAllBytes($junk, (New-Object byte[] 100000))
     $r = Test-GameImage $junk; Check "junk file is not verified ($($r.Text))" ($r.Ok -ne $true)
-    $r = Test-GameImage 'C:\nope\missing.iso'; Check 'missing file rejected' ($r.Ok -eq $false)
+    $r = Test-GameImage (Join-Path $env:TEMP 'gk-no-such-image.iso'); Check 'missing file rejected' ($r.Ok -eq $false)
 }
 
 $roots = Find-DataRoots

@@ -1,7 +1,7 @@
 """Test-only pnach: release mods + pad injection for driving the game over PINE.
 
 Never install this into your PCSX2. Usage: python tools/testpatch.py [PATCHES_DIR]
-(default <local path>). Write a button mask (game layout, see PLAN.md)
+(default: the patches folder of test_pcsx2, see localpaths.py). Write a button mask (game layout)
 to INJECT via PINE; it is OR'd into pad0's raw held word for the main-loop pad read.
 """
 import os, sys
@@ -143,7 +143,8 @@ lbl:
 """
 
 if __name__ == '__main__':
-    dest = sys.argv[1] if len(sys.argv) > 1 else r'<local path>'
+    import localpaths
+    dest = sys.argv[1] if len(sys.argv) > 1 else os.path.join(localpaths.get('test_pcsx2'), 'patches')
     release_layout = bool(os.environ.get('RELEASE_LAYOUT'))   # exact release blob + pad injection only
     text, _ = build.build(include_test=not release_layout)
     syms = build.build.syms

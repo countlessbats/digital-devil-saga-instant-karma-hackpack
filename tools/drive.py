@@ -7,7 +7,8 @@ import sstate
 VBL = 0x3bd2d8
 BTN = dict(SQ=0x80, X=0x40, TRI=0x10, O=0x20, LEFT=0x8000, RIGHT=0x2000, UP=0x1000, DOWN=0x4000,
            L1=0x4, L2=0x1, R1=0x8, R2=0x2, START=0x800, SELECT=0x100, L3=0x200, R3=0x400)
-SS = os.environ.get("PCSX2_SS", r"<local path>).%02d.p2s")
+import localpaths
+SS = os.environ.get("PCSX2_SS") or os.path.join(localpaths.get("test_pcsx2"), "sstates", "SLUS-20974 (D7273511).%02d.p2s")
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 p = Pine()
 

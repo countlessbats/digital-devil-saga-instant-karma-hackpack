@@ -2,7 +2,7 @@ r"""NumLock "move mode" for tuning the SET layout live in your PCSX2.
 
 While PCSX2 is the foreground window and NumLock is ON, numpad 4/6/8/2 move the LEARNED
 HP/MP unit label one framebuffer pixel (16 units) left/right/up/down. Values are written live
-over PINE and saved to nudge.txt next to this script's launcher (<local path>).
+over PINE and saved to the file named by nudge_out (see localpaths.py).
 Requires PCSX2 Settings > Advanced > PINE enabled (slot 28011).
 Usage: nudge.py [slot]
 """
@@ -12,7 +12,8 @@ from pine import Pine
 import tune
 
 SLOT = int(sys.argv[1]) if len(sys.argv) > 1 else 28011
-OUT = r'<local path>'
+import localpaths
+OUT = localpaths.get('nudge_out')
 BASE = 0xFF000
 import re
 MAGIC = int(re.search(r'#define LAY_MAGIC (0x[0-9a-fA-F]+)', open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'src', 'set_layout.c')).read()).group(1), 16)

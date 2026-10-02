@@ -35,7 +35,8 @@ MODULES = [
                       'and item drop rates--drop rates over 100% give a chance for extra items. No effect on bosses.'),
     (build.PATCH_BADK, 'Press right on the d-pad to instantly start a fight. TwoForOne reward bonuses apply.'),
     (build.PATCH_GOODK, 'Press left on the d-pad to instantly start a rare fight against a lone Omoikane. TwoForOne reward bonuses apply.'),
-    (build.PATCH_QS, 'During bootup, press START to load your latest save straight away, with no title screen or menus.'),
+    (build.PATCH_QS, 'During bootup, press START to load your latest save straight away, with no title screen or menus. '
+                     'Press any other button to skip straight to the title menu.'),
     (build.PATCH_SKIP, 'Press START to hyper-turbo through cutscenes, cutting pre-rendered movies. Stops at choices; press START again to carry on. Needs Native Turbo.'),
     (build.PATCH_CHEST, 'No more confirmation on opening chests.'),
     (build.PATCH_WT, 'Dialogue appears instantly.'),
