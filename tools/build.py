@@ -217,6 +217,8 @@ def build(include_test=False, include_local=False):
     hook(lines, 0x0037CCA0, syms['set_draw'], 'SET draw task table', False)
     hook(lines, 0x0037CC68, syms['set_draw_slot'], 'SET slot-select draw', False)
     hook(lines, 0x00278020, syms['costfn_copy'], 'LEARNED cost/unit drawer')
+    lines.append('patch=1,EE,0027DBD0,word,%08X' % (0x08000000 | (syms['set_arrows'] >> 2)))   # L1/R1 arrows: j set_arrows
+    lines.append('patch=1,EE,0027DBD4,word,00000000')
     # ---- Prey Eyes ----
     lines += ['', '[%s]' % PATCH_PREY,
               'author=Instant Karma v%s' % VERSION,

@@ -88,6 +88,26 @@ mt_out:
     sd    $18, 0x10($sp)
 """
 
+SP_CODE = 0x000F0600
+SP_ASM = """
+    .set noreorder
+    lui   $24, 0x000F
+    lw    $25, 0x4ffc($24)
+    sltiu $1, $25, 0x1000
+    beq   $1, $zero, sp_out
+    addu  $1, $24, $25
+    sw    $31, 0x5000($1)
+    sw    $4, 0x5004($1)
+    sw    $5, 0x5008($1)
+    sw    $7, 0x500c($1)
+    addiu $25, $25, 16
+    sw    $25, 0x4ffc($24)
+sp_out:
+    addiu $sp, $sp, -0x40
+    j     0x2bf798
+    sd    $21, 0x28($sp)
+"""
+
 if __name__ == '__main__':
     dest = sys.argv[1] if len(sys.argv) > 1 else r'<local path>'
     release_layout = bool(os.environ.get('RELEASE_LAYOUT'))   # exact release blob + pad injection only
@@ -113,5 +133,14 @@ if __name__ == '__main__':
         for i, w in enumerate(mw): lines.append('patch=1,EE,%08X,word,%08X' % (MT_CODE + 4 * i, w))
         lines.append('patch=1,EE,001028E8,word,%08X' % (0x08000000 | (MT_CODE >> 2)))
         lines.append('patch=1,EE,001028EC,word,00000000')
+    if os.environ.get('SPRITE_TRACE'):    # log (ra, x, y, sheet) of 0x2bf790 sprite calls; reset 0xF4FFC to 0 to start
+        src = SP_ASM
+        if os.environ.get('SPRITE_TRACE') == 'alpha':
+            src = src.replace('-0x40', '-0x80').replace('0x2bf798', '0x2bf4e8').replace('sd    $21, 0x28($sp)', 'sd    $22, 0x60($sp)')
+        sw = build.asm(src, SP_CODE)
+        for i, w in enumerate(sw): lines.append('patch=1,EE,%08X,word,%08X' % (SP_CODE + 4 * i, w))
+        site = 0x2bf4e0 if os.environ.get('SPRITE_TRACE') == 'alpha' else 0x2bf790
+        lines.append('patch=1,EE,%08X,word,%08X' % (site, 0x08000000 | (SP_CODE >> 2)))
+        lines.append('patch=1,EE,%08X,word,00000000' % (site + 4))
     open(os.path.join(dest, build.PNACH), 'w').write('\n'.join(lines) + '\n')
     print('test pnach ->', dest)

@@ -43,9 +43,10 @@ typedef struct {
     int cat_crop_left;
     int cat_label_dy;
     int cat_crop_bottom;                   /* lower the category name label (and its ! marker) */
+    int arr_dx, arr_dy;                 /* L1/R1 character arrows, offset from the game's spot (0x3b23a0) */
 } Layout;
 
-#define LAY_MAGIC 0x4c41591c
+#define LAY_MAGIC 0x4c41591d
 #define LAY ((volatile Layout *)0x000FF000)
 
 /* game functions */
@@ -116,11 +117,11 @@ static void layout_defaults(void)
 {
     volatile Layout *l = LAY;
     if (l->magic == LAY_MAGIC) return;
-    /* ASSIGNED top-left, HELP top-right, status under HELP, tabs under ASSIGNED,
+    /* ASSIGNED top-left, status top-right, HELP under the status, tabs under ASSIGNED,
      * LEARNED as a 3x8 grid across the full width (px ~ units/12.8 across, /7.47 down) */
     l->asg_x = 64;    l->asg_y = 255;  l->asg_rowh = 0x98;
-    l->help_dx = 4416; l->help_dy = -2442;
-    l->port_dx = 120;  l->port_dy = 709;
+    l->help_dx = 3950; l->help_dy = -1600;
+    l->port_dx = 120;  l->port_dy = -230;
     l->cat_x = -608;   l->cat_y = 1453;
     l->grid_x = 0;     l->grid_y = 1986; l->grid_pitch = 2662;
     l->grid_cols = 3;  l->grid_rows = 8;  l->grid_rowh = 0;
@@ -146,6 +147,7 @@ static void layout_defaults(void)
     l->arrow_dx = 0; l->row_lines = 1; l->row_line_dy = -16;
     l->box_fill = 0x00000030;
     l->cat_crop_top = 115; l->cat_crop_right = 755; l->cat_crop_left = 666; l->cat_label_dy = 15; l->cat_crop_bottom = 134;
+    l->arr_dx = 0; l->arr_dy = -939;
     l->magic = LAY_MAGIC;
 }
 
@@ -493,12 +495,30 @@ static void draw_learned_hints(u32 sheet)
     f_sprite(l->h_o_x, l->h_y, 0, 1, sheet, 5, PRIO);
 }
 
+/* The L1/R1 character arrows belong to the character list's cursor (0x27ccd0, style 2: 0x27dbd0), which
+ * draws them at a fixed spot (0x3b23a0: left x,y then right x,y) on every screen that has them. The pnach
+ * sends 0x27dbd0 here; while the SET screen is being drawn they follow the moved status block. */
+#define FRAME       RD32(0x003bd2d8u)
+static u32 set_frame;
+void set_arrows(int a0, int a1, int a2, int a3, u32 w, int prio)
+{
+    int dx = 0, dy = 0;
+    if (FRAME - set_frame <= 2 && LAY->magic == LAY_MAGIC) { dx = LAY->arr_dx; dy = LAY->arr_dy; }
+    int lx = (int)RD32(0x003b23a0u) + dx, ly = (int)RD32(0x003b23a4u) + dy;
+    int rx = (int)RD32(0x003b23a8u) + dx, ry = (int)RD32(0x003b23acu) + dy;
+    f_sprite_a(lx, ly, a2, a3, 1, RD32(w + 0x10), 0, prio);
+    f_sprite_a(lx, ly, a2, a3, 1, RD32(w + 0x18), 0, prio);
+    f_sprite_a(rx, ry, a2, a3, 1, RD32(w + 0x0c), 0, prio);
+    f_sprite_a(rx, ry, a2, a3, 1, RD32(w + 0x14), 0, prio);
+}
+
 /* Shared SET screen draw. slot_mode = 0: LEARNED has focus (original 0x279f88);
  * slot_mode = 1: picking an ASSIGNED slot / rearranging (original 0x279568). */
 static void draw_set_screen(u32 task, int slot_mode)
 {
     layout_defaults();
     volatile Layout *l = LAY;
+    set_frame = FRAME;
     if (l->skip & 0x40000) return;
     u32 wa = fn_task_work(task);
     u32 s1 = RD32(wa + 0x90c);
