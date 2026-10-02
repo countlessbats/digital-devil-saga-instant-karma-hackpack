@@ -323,6 +323,7 @@ def build(include_test=False, include_local=False):
     blob(lines)
     lines.append('patch=1,EE,000FD218,word,00000001')            # FEATURES[6]: SceneSkip on
     lines.append('patch=1,EE,0022F2F4,word,24020000')            # 'cannot be skipped' check -> skippable
+    lines.append('patch=1,EE,0022F31C,word,00000000')            # no "This event cannot be skipped." (SceneSkip can)
     hook(lines, 0x001006A4, syms['qs_pad'], 'main loop pad processing (shared with QuickStart)')
     hook(lines, 0x00125980, syms['field_hook'], 'field player-control step (tells SceneSkip the player has control)')
     for site in (0x0019B164, 0x0019B284, 0x0022D298, 0x0024DD28):
