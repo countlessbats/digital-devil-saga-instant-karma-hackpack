@@ -25,6 +25,7 @@
 #define X_MID     0x8000
 
 int ws_world;                     /* nonzero: 2D placed at a projected 3D point, leave it alone */
+static int ws_noedge;             /* nonzero: squeeze even vertices on a screen edge (see ws_label) */
 static int ws_off;                /* switched to 4:3 by WideToggle */
 
 int ws_active(void) { return FEATURES[11] && !ws_off; }
@@ -48,7 +49,7 @@ static int is_xyz(u32 reg) { return reg == 4 || reg == 5 || reg == 0xc || reg ==
 static u32 squeeze(u32 x)
 {
     int v = (int)(x & 0xffff);
-    if ((v >= X_LEFT - EDGE && v <= X_LEFT + EDGE) || (v >= X_RIGHT - EDGE && v <= X_RIGHT + EDGE)) return (u32)v;
+    if (!ws_noedge && ((v >= X_LEFT - EDGE && v <= X_LEFT + EDGE) || (v >= X_RIGHT - EDGE && v <= X_RIGHT + EDGE))) return (u32)v;
     return (u32)(X_MID + (v - X_MID) * 3 / 4) & 0xffff;
 }
 
@@ -156,4 +157,14 @@ void ws_minimap(u32 a0, u32 a1, u32 a2, u32 a3, u32 a4, u32 a5, u32 a6, u32 a7)
     ws_world = 1;
     f_minimap(a0, a1, a2, a3, a4, a5, a6, a7);
     ws_world = 0;
+}
+
+/* The menu's big HP/MP labels beside each party member (sprite call at 0x284574) end exactly at the right edge;
+ * under the edge rule their right side would stay there and stretch them, so they are squeezed whole. */
+#define f_sprite_a ((void (*)(u32, u32, u32, u32, u32, u32, u32, u32))0x002bf4e0)
+void ws_label(u32 a0, u32 a1, u32 a2, u32 a3, u32 a4, u32 a5, u32 a6, u32 a7)
+{
+    ws_noedge = 1;
+    f_sprite_a(a0, a1, a2, a3, a4, a5, a6, a7);
+    ws_noedge = 0;
 }

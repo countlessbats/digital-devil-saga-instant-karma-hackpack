@@ -46,7 +46,7 @@ typedef struct {
     int arr_dx, arr_dy;                 /* L1/R1 character arrows, offset from the game's spot (0x3b23a0) */
 } Layout;
 
-#define LAY_MAGIC 0x4c41591d
+#define LAY_MAGIC 0x4c41591e
 #define LAY ((volatile Layout *)0x000FF000)
 
 /* game functions */
@@ -141,7 +141,7 @@ static void layout_defaults(void)
     l->frames = 0;
     l->div_color = 0x44445a80; l->div_dx = 88; l->div_w = 16;
     l->undo_keep = 53; l->undo_lx = 152; l->undo_x = 1064; l->undo_rx = 1816;
-    l->box_x0 = 64; l->box_y0 = 1980; l->box_x1 = 8166; l->box_y1 = 3362;
+    l->box_x0 = 64; l->box_y0 = 1980; l->box_x1 = 8330; l->box_y1 = 3362;
     l->line_w = 16; l->line_h = 16;
     l->mark_dx = -0xb0; l->mark_dy = -0x38;
     l->arrow_dx = 0; l->row_lines = 1; l->row_line_dy = -16;
@@ -589,8 +589,16 @@ static void draw_set_screen(u32 task, int slot_mode)
 /* Replaces the SET learned-list draw task (table entry 0x37cca0; original 0x279f88). */
 void set_draw(u32 task) { draw_set_screen(task, 0); }
 
-/* Replaces the SET slot-select / rearrange draw task (table entry 0x37cc68; original 0x279568). */
-void set_draw_slot(u32 task) { draw_set_screen(task, 1); }
+/* Replaces the SET slot-select / rearrange draw task (table entry 0x37cc68; original 0x279568). The Skill
+ * menu's skill list uses the same task without a learned list (the flag at work+0x124 is 0): that screen keeps
+ * the game's own layout. */
+#define f_slot_draw_orig ((void (*)(u32))0x00279568)
+void set_draw_slot(u32 task)
+{
+    u32 wa = fn_task_work(task);
+    if (RD32(RD32(RD32(RD32(wa + 0x124) + 0x14) + 0x1c)) == 0) { f_slot_draw_orig(task); return; }
+    draw_set_screen(task, 1);
+}
 
 /* ---- grid navigation (called from the SET logic wrapper before the game's handler) ---- */
 
