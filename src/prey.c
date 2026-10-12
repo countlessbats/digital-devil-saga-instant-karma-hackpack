@@ -184,12 +184,25 @@ static u32 action_rec(void)
     return b ? RD32(b + 0x164) : 0;
 }
 
+/* The skill an action uses. Items leave the skill field empty and store the item number at +0x28;
+ * the item's skill comes from the item table (Spyglass uses Analyze). +0x20 is the action type,
+ * 4 for an item. */
+#define f_item_skill  ((u32 (*)(u32))0x001a30e0)
+static u32 action_skill(u32 rec)
+{
+    u32 skill = RD32(rec + 0x24);
+    if (skill != 0xffffffffu || RD32(rec + 0x20) != 4) return skill;
+    u32 item = RD32(rec + 0x28);
+    if (item == 0 || item >= 0x100) return skill;
+    return f_item_skill(item);
+}
+
 static int action_attr(void)
 {
     if (PR->debug_attr) return PR->debug_attr - 1;
     u32 rec = action_rec();
     if (!rec) return -1;
-    u32 actor = RD32(rec + 0x18), skill = RD32(rec + 0x24);
+    u32 actor = RD32(rec + 0x18), skill = action_skill(rec);
     if (!actor || skill == 0xffffffff) return -1;
     return f_skill_attr(actor, skill) & 0xff;
 }
@@ -431,7 +444,7 @@ static void draw_enemy_buffs(void)
     int phase = rec ? (int)RD32(rec) : 0;
     int panel = f_task_by_id(0x3a1ec8u) || f_task_by_id(0x3a1eb0u);   /* "btl_panel_command" / "btl_panel_target" */
     static int prev_exec;
-    int exec = !panel && rec && phase != 6 && RD32(rec + 0x24) != 0xffffffffu;   /* a skill/attack is resolving */
+    int exec = !panel && rec && phase != 6 && action_skill(rec) != 0xffffffffu;   /* a skill/attack is resolving */
     if ((prev_exec && !exec) || panel) buff_pending = 0;      /* that action is over */
     prev_exec = exec;
     if (exec && !buff_pending) return;
@@ -492,7 +505,7 @@ void prey_after_target_input(u32 work, int confirm)
     if (st != 3 && st != 5) return;
     u32 rec = action_rec();
     if (!rec) return;
-    u32 skill = RD32(rec + 0x24);
+    u32 skill = action_skill(rec);
     int attr = action_attr();
     u32 list = RD32(work + 0x10);
     if (!list) return;

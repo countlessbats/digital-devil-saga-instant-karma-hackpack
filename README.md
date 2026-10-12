@@ -11,7 +11,7 @@ Battle information, adapted from the Prey Eyes 2 mod for SMT III Nocturne HD:
 - **Skill preview:** in the command menu, hovering Attack or a skill marks every enemy with the result it would have, as the reticle's result icon alone: only known weak, resist, null, reflect and drain results show. Choosing the skill hands over to the full reticle on the enemy you target.
 - **Affinity board:** above the targeted enemy's name: all nine elements (Phys, Gun, Fire, Ice, Elec, Force, Earth, Expel, Death) with their results, and above them the ailments (Charm, Poison, Mute, Panic, Sleep) you know the enemy resists, blocks or is weak to. Unknown and normal ones are left out. This row is the enemy's resistance, not its current status.
 - **Buffs and debuffs:** Attack, Magic, Defense and Hit/Evasion levels (-kaja/-nda, up to 4 steps) above each enemy's head (hidden while an attack plays, unless that attack changes buffs) and under each party member's portrait. The help bar moves down slightly to make room.
-- **Knowledge:** affinities start unknown. Using a skill on an enemy teaches that attribute for its species; killing one or using Analyze reveals everything. Knowledge is stored inside your save file, so each save keeps its own.
+- **Knowledge:** affinities start unknown. Using a skill on an enemy teaches that attribute for its species; killing one, using Analyze or using a Spyglass reveals everything, bosses included. Knowledge is stored inside your save file, so each save keeps its own.
 
 ### Native Turbo
 Runs the game's own logic faster, instead of fast-forwarding the emulator, so music keeps its normal speed.
@@ -31,7 +31,7 @@ It also speeds up the Mantra acquisition screen's transitions automatically.
 A redesigned skill SET screen:
 - LEARNED shows **3 columns × 8 rows** (24 entries instead of 8).
 - **D-pad** moves in all four directions and wraps at every edge. **L2/R2** change the skill category.
-- **START** sorts LEARNED: Game order → Cost → A–Z. The choice sticks across visits and characters until the game restarts.
+- **START** sorts LEARNED: Default (game order) → Cost → A–Z. The choice sticks across visits and characters until the game restarts.
 - ASSIGNED, HELP and the character status are moved into the corners to make room; the "new skill" marker and cursor arrow sit at the end of each skill name.
 
 ### Widescreen

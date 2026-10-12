@@ -17,7 +17,7 @@ PNACH_OUT = 'SLUS-20974_D7273511_InstantKarma.pnach'
 # player-facing order and descriptions (section names stay as they are: PCSX2 settings refer to them)
 MODULES = [
     (build.PATCH_CORE, 'The engine that makes the other Instant Karma features go. Always on while any of them is on; keep it ticked in the PCSX2 Patches list.'),
-    (build.PATCH_PREY, 'A complete combat UI overhaul. Discover enemy weaknesses by experiment or by killing them, '
+    (build.PATCH_PREY, 'A complete combat UI overhaul. Discover enemy weaknesses by experiment, by killing them, or with Analyze or a Spyglass (bosses too), '
                        'then see them represented in a board and in targeting reticles, and previewed on enemies '
                        'as you browse skills. See buff and debuff stacks. '
                        "Inspired by SMTV's system."),

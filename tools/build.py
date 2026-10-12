@@ -248,7 +248,7 @@ def build(include_test=False, include_local=False):
     lines += ['', '[%s]' % PATCH_SET,
               'author=Instant Karma v%s' % VERSION,
               'description=Skill SET screen: 3-column LEARNED grid (d-pad wraps, L2/R2 change tab), '
-              'START sorts Game/Cost/A-Z, relaid-out panels.']
+              'START sorts Default/Cost/A-Z, relaid-out panels.']
     blob(lines)
     hook(lines, 0x0027862C, syms['set_finalize'], 'builder finalize call')
     hook(lines, 0x0037CC9C, syms['set_logic'], 'SET logic task table', False)
