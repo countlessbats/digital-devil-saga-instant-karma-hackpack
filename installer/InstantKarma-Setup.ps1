@@ -22,6 +22,7 @@ $PnachName = "${Serial}_${Crc}_InstantKarma.pnach"
 $IniName   = "${Serial}_${Crc}.ini"
 $Prefix    = 'Instant Karma - '
 $CoreName  = "${Prefix}Core"         # shared code: on whenever any module is on, never offered as a choice
+$OptIn     = @("${Prefix}NoKarma")    # challenge modules: never ticked unless chosen
 $Here      = Split-Path -Parent $MyInvocation.MyCommand.Path
 $Utf8      = New-Object System.Text.UTF8Encoding($false)
 
@@ -390,7 +391,7 @@ if ($script:Core) {    # always installed with the modules: shown ticked and gre
     $modPanel.Controls.Add($cb); $modPanel.Controls.Add($d)
 }
 foreach ($m in $modules) {
-    $cb = New-Object System.Windows.Forms.CheckBox; $cb.Text = $m.Title; $cb.Checked = $true; $cb.AutoSize = $true
+    $cb = New-Object System.Windows.Forms.CheckBox; $cb.Text = $m.Title; $cb.Checked = ($OptIn -notcontains $m.Name); $cb.AutoSize = $true
     $cb.Font = New-Object System.Drawing.Font('Segoe UI', 9, [System.Drawing.FontStyle]::Bold)
     $cb.Margin = New-Object System.Windows.Forms.Padding(6, 8, 0, 0)
     $d = New-Object System.Windows.Forms.Label; $d.Text = $m.Description; $d.AutoSize = $true
@@ -473,7 +474,7 @@ if ($skipCb -and $turboCb) {
     $skipCb.Add_CheckedChanged({ if ($skipCb.Checked -and -not $turboCb.Checked) { $turboCb.Checked = $true } })
     $turboCb.Add_CheckedChanged({ if (-not $turboCb.Checked -and $skipCb.Checked) { $skipCb.Checked = $false } })
 }
-$allBtn.Add_Click({ foreach ($cb in $checks.Values) { $cb.Checked = $true } })
+$allBtn.Add_Click({ foreach ($k in $checks.Keys) { if ($OptIn -notcontains $k) { $checks[$k].Checked = $true } } })
 $noneBtn.Add_Click({ foreach ($cb in $checks.Values) { $cb.Checked = $false } })
 
 $installBtn.Add_Click({

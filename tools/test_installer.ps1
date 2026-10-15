@@ -37,7 +37,8 @@ $other = Join-Path $root 'patches\SLUS-20974_D7273511_other.pnach'; [IO.File]::W
 
 Check 'scratch root is recognised' (Test-DataRoot $root)
 $mods = Get-Sections (Join-Path $Here $PnachName)
-Check "pnach has 15 modules ($($mods.Count))" ($mods.Count -eq 15)
+Check "pnach has 16 modules ($($mods.Count))" ($mods.Count -eq 16)
+Check 'NoKarma is opt-in' (($OptIn -contains 'Instant Karma - NoKarma') -and ($mods.Name -contains 'Instant Karma - NoKarma'))
 $pick = @('Instant Karma - Prey Eyes', 'Instant Karma - Native Turbo', 'Instant Karma - WordTripper')
 Install-InstantKarma $root $pick
 $pn = Join-Path $root "patches\$PnachName"

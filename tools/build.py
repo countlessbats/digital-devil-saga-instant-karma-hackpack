@@ -209,6 +209,7 @@ PATCH_BADK = 'Instant Karma - BadKarma'
 PATCH_GOODK = 'Instant Karma - GoodKarma'
 PATCH_WS = 'Instant Karma - Widescreen'
 PATCH_QH = 'Instant Karma - QuickHeal'
+PATCH_NOK = 'Instant Karma - NoKarma'
 PATCH_CORE = 'Instant Karma - Core'
 ATLAS_ADDR = 0x000A0000
 
@@ -359,6 +360,10 @@ def build(include_test=False, include_local=False):
     lines.append('patch=1,EE,0039E308,word,%08X' % syms['qh_fade'])    # script command 16 (fade)
     for site in (0x00249E94, 0x0024CB20, 0x0024D5D0):
         hook(lines, site, syms['qh_menu_build'], 'terminal menu built (open, or rebuilt after Teleport)')
+    # ---- NoKarma: the per-kill reward (0x1a4328) stores 0 as the battle's Karma total instead of adding to it ----
+    lines += ['', '[%s]' % PATCH_NOK, 'author=Instant Karma v%s' % VERSION,
+              'description=Challenge: defeated enemies, bosses included, give no Karma. Macca, Atma and items are unchanged.']
+    lines.append('patch=1,EE,001A444C,word,AEA002C8')   # sw v0,0x2c8(s5) -> sw zero,0x2c8(s5)
     # ---- Widescreen: 16:9 camera (the camera aspect constant) with the 2D interface kept at 4:3 proportions ----
     lines += ['', '[%s]' % PATCH_WS, 'author=Instant Karma v%s' % VERSION,
               'description=16:9 widescreen: wider 3D view; menus and text keep their shape.',

@@ -184,16 +184,16 @@ static u32 action_rec(void)
     return b ? RD32(b + 0x164) : 0;
 }
 
-/* The skill an action uses. Items leave the skill field empty and store the item number at +0x28;
- * the item's skill comes from the item table (Spyglass uses Analyze). +0x20 is the action type,
- * 4 for an item. */
+/* The skill an action uses. +0x20 is the action type, 4 for an item. Items store the item number
+ * at +0x28 and the skill field isn't cleared (backing out of Attack leaves 0 there), so an item's
+ * skill comes from the item table instead (Spyglass uses Analyze). */
 #define f_item_skill  ((u32 (*)(u32))0x001a30e0)
 static u32 action_skill(u32 rec)
 {
     u32 skill = RD32(rec + 0x24);
-    if (skill != 0xffffffffu || RD32(rec + 0x20) != 4) return skill;
+    if (RD32(rec + 0x20) != 4) return skill;
     u32 item = RD32(rec + 0x28);
-    if (item == 0 || item >= 0x100) return skill;
+    if (item == 0 || item >= 0x100) return 0xffffffffu;
     return f_item_skill(item);
 }
 

@@ -78,6 +78,9 @@ All text fades in at once instead of letter by letter.
 ### QuickHeal
 Inspecting a recovery terminal (Life Terminal) heals the whole party at once, with the heal sound and no menu or fade. Large Karma Terminals heal the party as their menu opens, including when you arrive by Teleport, so Restore comes up greyed out. Either way it costs the same macca as healing everyone in the menu; if you can't afford everyone, members are healed in party order while the money lasts. Small Karma Terminals don't heal.
 
+### NoKarma
+A challenge option, off unless you tick it. Defeated enemies give no Karma, bosses included, so the battle results show 0 Karma. Macca, Atma and item drops are unchanged.
+
 ## Install
 
 Download `InstantKarma-v<version>.zip` (it contains no game data), extract it, close PCSX2, and run `Install.bat`.

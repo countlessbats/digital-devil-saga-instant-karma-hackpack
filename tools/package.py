@@ -42,6 +42,8 @@ MODULES = [
     (build.PATCH_WT, 'Dialogue appears instantly.'),
     (build.PATCH_QH, 'Inspecting a recovery terminal heals the whole party instantly, no menu. Large Karma Terminals '
                      'automatically charge the party to heal as they open. Costs the same macca as healing everyone in the menu.'),
+    (build.PATCH_NOK, 'Challenge option, off unless ticked: defeated enemies give no Karma, bosses included. Macca, Atma and '
+                      'items drop as normal.'),
 ]
 
 
